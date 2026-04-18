@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Trainer Dashboard - SDP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <div class="w-full md:w-64 bg-slate-900 text-white p-6">
+            <h1 class="text-2xl font-bold mb-8 text-yellow-500">HRTVerse <span class="text-white text-sm block">Sales Development Program</span></h1>
+            <nav>
+                <a href="#" class="block py-2.5 px-4 rounded transition duration-200 bg-slate-800 mb-2">
+                    <i class="fas fa-users mr-2"></i> Monitor Peserta
+                </a>
+            </nav>
+        </div>
+
+        <div class="flex-1 p-8">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-semibold text-gray-800">Dashboard Admin Sales Trainer</h2>
+                <div class="text-right">
+                    <div class="text-sm text-gray-500 italic">Jadwal: Selasa, Rabu, Jumat</div>
+                    <div id="current-date" class="font-bold text-slate-700"></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+                <h3 class="text-lg font-bold mb-4 border-b pb-2 text-gray-700">Tambah Peserta Baru</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="text" id="p_name" placeholder="Nama Lengkap Peserta" class="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="p_posisi" placeholder="Posisi/Batch" class="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="p_month" class="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600">
+                        <option value="01">Januari</option>
+                        <option value="02">Februari</option>
+                        <option value="03">Maret</option>
+                        <option value="04">April</option>
+                        <option value="05">Mei</option>
+                        <option value="06">Juni</option>
+                        <option value="07">Juli</option>
+                        <option value="08">Agustus</option>
+                        <option value="09">September</option>
+                        <option value="10">Oktober</option>
+                        <option value="11">November</option>
+                        <option value="12">Desember</option>
+                    </select>
+                    <button onclick="tambahPeserta()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-bold">
+                        <i class="fas fa-plus mr-2"></i> Daftarkan
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="p-4 bg-gray-50 border-b flex flex-col md:flex-row justify-between items-center gap-4">
+                    <h3 class="font-bold text-gray-700 underline decoration-yellow-500 decoration-4">Data Monitoring</h3>
+                    
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm font-medium text-gray-600">Filter Bulan:</label>
+                        <select id="filterMonth" onchange="filterData()" class="border p-1.5 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="all">Tampilkan Semua</option>
+                            <option value="01">Januari</option>
+                            <option value="02">Februari</option>
+                            <option value="03">Maret</option>
+                            <option value="04">April</option>
+                            <option value="05">Mei</option>
+                            <option value="06">Juni</option>
+                            <option value="07">Juli</option>
+                            <option value="08">Agustus</option>
+                            <option value="09">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                    </div>
+                </div>
+
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th class="p-4 font-semibold text-gray-600">Peserta & Bulan</th>
+                            <th class="p-4 font-semibold text-gray-600">Materi (1-10)</th>
+                            <th class="p-4 font-semibold text-gray-600">Progress</th>
+                            <th class="p-4 font-semibold text-gray-600">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="list-peserta">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set default bulan di form sesuai bulan sekarang
+        const now = new Date();
+        const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+        document.getElementById('p_month').value = currentMonth;
+        document.getElementById('current-date').innerText = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        function tambahPeserta() {
+            const name = document.getElementById('p_name').value;
+            const posisi = document.getElementById('p_posisi').value;
+            const bulan = document.getElementById('p_month').value;
+            const bulanTeks = document.getElementById('p_month').options[document.getElementById('p_month').selectedIndex].text;
+            
+            if (name === "") return alert("Masukkan nama peserta!");
+
+            const table = document.getElementById('list-peserta');
+            const rowId = Date.now();
+            const tr = document.createElement('tr');
+            
+            // Tambahkan attribute data-month untuk keperluan filtering
+            tr.className = "border-b hover:bg-gray-50 transition participant-row";
+            tr.setAttribute('data-month', bulan);
+            tr.id = `row-${rowId}`;
+
+            let checkboxes = '';
+            for(let i=1; i<=10; i++) {
+                checkboxes += `<input type="checkbox" class="prog-check mr-1 cursor-pointer w-4 h-4" onchange="updateProgress('${rowId}')"> `;
+            }
+
+            tr.innerHTML = `
+                <td class="p-4">
+                    <div class="font-bold text-gray-800">${name}</div>
+                    <div class="text-xs text-gray-500 uppercase">${posisi} | <span class="text-blue-600 font-semibold">${bulanTeks}</span></div>
+                </td>
+                <td class="p-4">
+                    <div class="grid grid-cols-5 gap-1 w-44">
+                        ${checkboxes}
+                    </div>
+                </td>
+                <td class="p-4 w-64">
+                    <div class="w-full bg-gray-200 rounded-full h-4 mb-1 border">
+                        <div id="bar-${rowId}" class="bg-green-500 h-full rounded-full transition-all duration-500 shadow-sm" style="width: 0%"></div>
+                    </div>
+                    <span id="text-${rowId}" class="text-xs font-bold text-gray-600 uppercase tracking-tight">0% Selesai</span>
+                </td>
+                <td class="p-4">
+                    <button onclick="hapusPeserta('${rowId}')" class="text-red-400 hover:text-red-700 transition">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+            
+            table.appendChild(tr);
+            
+            // Reset input (kecuali bulan)
+            document.getElementById('p_name').value = "";
+            document.getElementById('p_posisi').value = "";
+            
+            // Jalankan filter otomatis jika filter sedang aktif
+            filterData();
+        }
+
+        function filterData() {
+            const selectedMonth = document.getElementById('filterMonth').value;
+            const rows = document.querySelectorAll('.participant-row');
+
+            rows.forEach(row => {
+                const rowMonth = row.getAttribute('data-month');
+                if (selectedMonth === 'all' || rowMonth === selectedMonth) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+
+        function updateProgress(id) {
+            const row = document.getElementById(`row-${id}`);
+            const checks = row.querySelectorAll('.prog-check');
+            const checkedCount = Array.from(checks).filter(c => c.checked).length;
+            const percentage = (checkedCount / 10) * 100;
+
+            const bar = document.getElementById(`bar-${id}`);
+            const text = document.getElementById(`text-${id}`);
+
+            bar.style.width = percentage + "%";
+            
+            if(percentage < 40) bar.className = "bg-red-500 h-full rounded-full transition-all duration-500 shadow-sm";
+            else if(percentage < 80) bar.className = "bg-yellow-500 h-full rounded-full transition-all duration-500 shadow-sm";
+            else bar.className = "bg-green-500 h-full rounded-full transition-all duration-500 shadow-sm";
+
+            text.innerText = percentage + "% Selesai";
+            
+            if(percentage === 100) {
+                text.innerHTML = '<span class="text-green-700 font-black tracking-widest"><i class="fas fa-check-circle"></i> LULUS</span>';
+            }
+        }
+
+        function hapusPeserta(id) {
+            if(confirm("Hapus peserta ini dari database sementara?")) {
+                document.getElementById(`row-${id}`).remove();
+            }
+        }
+    </script>
+</body>
+</html>
