@@ -3,37 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Trainer Dashboard - SDP</title>
+    <title>Sales Trainer Dashboard - SDP </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Custom hide spin buttons for chrome/safari */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100 font-sans text-gray-900">
 
     <div class="flex flex-col md:flex-row min-h-screen">
-        <div class="w-full md:w-64 bg-slate-900 text-white p-6">
-            <h1 class="text-2xl font-bold mb-8 text-yellow-500">HRTVerse <span class="text-white text-sm block">Sales Development Program</span></h1>
+        <div class="w-full md:w-64 bg-slate-900 text-white p-6 shadow-xl">
+            <h1 class="text-2xl font-bold mb-8 text-yellow-500">
+                HRTVerse 
+                <span class="text-white text-xs block font-normal opacity-70">Sales Development Program</span>
+            </h1>
             <nav>
-                <a href="#" class="block py-2.5 px-4 rounded transition duration-200 bg-slate-800 mb-2">
-                    <i class="fas fa-users mr-2"></i> Monitor Peserta
+                <a href="#" class="flex items-center py-3 px-4 rounded-lg bg-blue-600 text-white shadow-lg transition duration-200">
+                    <i class="fas fa-chart-line mr-3"></i> Monitor & Nilai
                 </a>
             </nav>
         </div>
 
-        <div class="flex-1 p-8">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-3xl font-semibold text-gray-800">Dashboard Admin Sales Trainer</h2>
-                <div class="text-right">
-                    <div class="text-sm text-gray-500 italic">Jadwal: Selasa, Rabu, Jumat</div>
-                    <div id="current-date" class="font-bold text-slate-700"></div>
+        <div class="flex-1 p-4 md:p-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-3xl font-extrabold text-slate-800">Dashboard Admin</h2>
+                    <p class="text-gray-500">Manajemen Nilai & Progress Peserta SDP</p>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-yellow-500">
+                    <div class="text-xs text-gray-400 uppercase font-bold tracking-wider">Hari Pelatihan</div>
+                    <div class="text-sm text-slate-700 font-medium italic mb-1">Selasa, Rabu, Jumat</div>
+                    <div id="current-date" class="text-lg font-bold text-slate-800"></div>
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-                <h3 class="text-lg font-bold mb-4 border-b pb-2 text-gray-700">Tambah Peserta Baru</h3>
+            <div class="bg-white p-6 rounded-2xl shadow-sm mb-8 border border-gray-200">
+                <h3 class="text-lg font-bold mb-4 text-gray-700 flex items-center">
+                    <i class="fas fa-user-plus mr-2 text-blue-500"></i> Tambah Peserta Baru
+                </h3>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <input type="text" id="p_name" placeholder="Nama Lengkap Peserta" class="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <input type="text" id="p_posisi" placeholder="Posisi/Batch" class="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <select id="p_month" class="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-600">
+                    <input type="text" id="p_name" placeholder="Nama Lengkap" class="border border-gray-300 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    <input type="text" id="p_posisi" placeholder="Posisi / Batch" class="border border-gray-300 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    <select id="p_month" class="border border-gray-300 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-white text-gray-600">
                         <option value="01">Januari</option>
                         <option value="02">Februari</option>
                         <option value="03">Maret</option>
@@ -47,20 +64,24 @@
                         <option value="11">November</option>
                         <option value="12">Desember</option>
                     </select>
-                    <button onclick="tambahPeserta()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-bold">
-                        <i class="fas fa-plus mr-2"></i> Daftarkan
+                    <button onclick="tambahPeserta()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl transition duration-300 font-bold shadow-md flex items-center justify-center">
+                        <i class="fas fa-save mr-2"></i> Daftarkan
                     </button>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                <div class="p-4 bg-gray-50 border-b flex flex-col md:flex-row justify-between items-center gap-4">
-                    <h3 class="font-bold text-gray-700 underline decoration-yellow-500 decoration-4">Data Monitoring</h3>
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200">
+                <div class="p-5 bg-gray-50 border-b flex flex-col md:flex-row justify-between items-center gap-4">
+                    <h3 class="font-bold text-slate-700 flex items-center uppercase tracking-wide">
+                        <span class="w-2 h-6 bg-yellow-500 rounded-full mr-3"></span>
+                        Data Monitoring Peserta
+                    </h3>
                     
-                    <div class="flex items-center gap-2">
-                        <label class="text-sm font-medium text-gray-600">Filter Bulan:</label>
-                        <select id="filterMonth" onchange="filterData()" class="border p-1.5 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option value="all">Tampilkan Semua</option>
+                    <div class="flex items-center gap-3 bg-white px-4 py-1.5 rounded-full border shadow-sm">
+                        <i class="fas fa-filter text-gray-400 text-sm"></i>
+                        <label class="text-xs font-bold text-gray-500 uppercase">Filter:</label>
+                        <select id="filterMonth" onchange="filterData()" class="bg-transparent text-sm font-semibold focus:outline-none cursor-pointer">
+                            <option value="all">Semua Bulan</option>
                             <option value="01">Januari</option>
                             <option value="02">Februari</option>
                             <option value="03">Maret</option>
@@ -77,88 +98,167 @@
                     </div>
                 </div>
 
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-100 border-b">
-                        <tr>
-                            <th class="p-4 font-semibold text-gray-600">Peserta & Bulan</th>
-                            <th class="p-4 font-semibold text-gray-600">Materi (1-10)</th>
-                            <th class="p-4 font-semibold text-gray-600">Progress</th>
-                            <th class="p-4 font-semibold text-gray-600">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="list-peserta">
-                        </tbody>
-                </table>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 text-gray-400 uppercase text-[11px] font-black tracking-widest border-b">
+                            <tr>
+                                <th class="p-5">Peserta</th>
+                                <th class="p-5 text-center">Input Nilai Per Materi (0-100)</th>
+                                <th class="p-5">Rata-rata & Status</th>
+                                <th class="p-5 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-peserta" class="divide-y divide-gray-100">
+                            </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // Set default bulan di form sesuai bulan sekarang
-        const now = new Date();
-        const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
-        document.getElementById('p_month').value = currentMonth;
-        document.getElementById('current-date').innerText = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, remove, update } 
+        from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        function tambahPeserta() {
+        // GANTI INI DENGAN KONFIGURASI FIREBASE ANDA
+        const firebaseConfig = {
+            apiKey: "AIzaSy...",
+            authDomain: "projek-anda.firebaseapp.com",
+            databaseURL: "https://projek-anda-default-rtdb.firebaseio.com",
+            projectId: "projek-anda",
+            storageBucket: "projek-anda.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:12345:web:abcdef"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const pesertaRef = ref(db, 'peserta');
+
+        // Set Tanggal Hari Ini
+        const now = new Date();
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        document.getElementById('current-date').innerText = now.toLocaleDateString('id-ID', options);
+        document.getElementById('p_month').value = String(now.getMonth() + 1).padStart(2, '0');
+
+        // Tambah Peserta ke Firebase
+        window.tambahPeserta = function() {
             const name = document.getElementById('p_name').value;
             const posisi = document.getElementById('p_posisi').value;
             const bulan = document.getElementById('p_month').value;
             const bulanTeks = document.getElementById('p_month').options[document.getElementById('p_month').selectedIndex].text;
-            
-            if (name === "") return alert("Masukkan nama peserta!");
 
-            const table = document.getElementById('list-peserta');
-            const rowId = Date.now();
-            const tr = document.createElement('tr');
-            
-            // Tambahkan attribute data-month untuk keperluan filtering
-            tr.className = "border-b hover:bg-gray-50 transition participant-row";
-            tr.setAttribute('data-month', bulan);
-            tr.id = `row-${rowId}`;
+            if (name === "" || posisi === "") return alert("Mohon lengkapi nama dan posisi!");
 
-            let checkboxes = '';
-            for(let i=1; i<=10; i++) {
-                checkboxes += `<input type="checkbox" class="prog-check mr-1 cursor-pointer w-4 h-4" onchange="updateProgress('${rowId}')"> `;
-            }
-
-            tr.innerHTML = `
-                <td class="p-4">
-                    <div class="font-bold text-gray-800">${name}</div>
-                    <div class="text-xs text-gray-500 uppercase">${posisi} | <span class="text-blue-600 font-semibold">${bulanTeks}</span></div>
-                </td>
-                <td class="p-4">
-                    <div class="grid grid-cols-5 gap-1 w-44">
-                        ${checkboxes}
-                    </div>
-                </td>
-                <td class="p-4 w-64">
-                    <div class="w-full bg-gray-200 rounded-full h-4 mb-1 border">
-                        <div id="bar-${rowId}" class="bg-green-500 h-full rounded-full transition-all duration-500 shadow-sm" style="width: 0%"></div>
-                    </div>
-                    <span id="text-${rowId}" class="text-xs font-bold text-gray-600 uppercase tracking-tight">0% Selesai</span>
-                </td>
-                <td class="p-4">
-                    <button onclick="hapusPeserta('${rowId}')" class="text-red-400 hover:text-red-700 transition">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </td>
-            `;
-            
-            table.appendChild(tr);
-            
-            // Reset input (kecuali bulan)
-            document.getElementById('p_name').value = "";
-            document.getElementById('p_posisi').value = "";
-            
-            // Jalankan filter otomatis jika filter sedang aktif
-            filterData();
+            const newPesertaRef = push(pesertaRef);
+            set(newPesertaRef, {
+                name: name,
+                posisi: posisi,
+                bulan: bulan,
+                bulanTeks: bulanTeks,
+                materi: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] // Default nilai 0 untuk 10 materi
+            }).then(() => {
+                document.getElementById('p_name').value = "";
+                document.getElementById('p_posisi').value = "";
+            });
         }
 
-        function filterData() {
+        // Render Data Realtime
+        onValue(pesertaRef, (snapshot) => {
+            const table = document.getElementById('list-peserta');
+            table.innerHTML = "";
+            const data = snapshot.val();
+
+            if (!data) {
+                table.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-gray-400 italic text-sm">Belum ada data peserta terdaftar.</td></tr>`;
+                return;
+            }
+
+            Object.keys(data).forEach((key) => {
+                const p = data[key];
+                const rowId = key;
+                
+                // Menghitung Rata-rata
+                const nilaiMateri = p.materi || [0,0,0,0,0,0,0,0,0,0];
+                const sum = nilaiMateri.reduce((a, b) => Number(a) + Number(b), 0);
+                const avg = (sum / 10).toFixed(1);
+
+                // Warna progress bar
+                let colorClass = "bg-red-500";
+                if(avg >= 60 && avg < 80) colorClass = "bg-yellow-500";
+                if(avg >= 80) colorClass = "bg-green-500";
+
+                // Generate Input Nilai
+                let inputsHtml = '';
+                nilaiMateri.forEach((nilai, idx) => {
+                    inputsHtml += `
+                        <div class="flex flex-col items-center">
+                            <span class="text-[9px] font-bold text-gray-400 mb-1">M${idx+1}</span>
+                            <input type="number" value="${nilai}" 
+                                onchange="updateNilaiFirebase('${rowId}', ${idx}, this.value)"
+                                class="w-10 h-8 border border-gray-200 rounded text-center text-xs font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                                min="0" max="100">
+                        </div>`;
+                });
+
+                const tr = document.createElement('tr');
+                tr.className = "participant-row hover:bg-slate-50 transition duration-150";
+                tr.setAttribute('data-month', p.bulan);
+
+                tr.innerHTML = `
+                    <td class="p-5">
+                        <div class="font-bold text-slate-800">${p.name}</div>
+                        <div class="text-[10px] text-gray-500 uppercase font-medium tracking-tighter">${p.posisi} | <span class="text-blue-600 font-bold">${p.bulanTeks}</span></div>
+                    </td>
+                    <td class="p-5">
+                        <div class="flex justify-center gap-1.5">
+                            ${inputsHtml}
+                        </div>
+                    </td>
+                    <td class="p-5">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs font-black text-slate-700">${avg}%</span>
+                            <span class="text-[10px] font-bold ${avg >= 80 ? 'text-green-600' : 'text-gray-400'} uppercase">
+                                ${avg >= 80 ? '<i class="fas fa-check-circle"></i> Lulus' : 'Belajar'}
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2 border border-gray-200 overflow-hidden">
+                            <div class="${colorClass} h-full transition-all duration-700 ease-out" style="width: ${avg}%"></div>
+                        </div>
+                    </td>
+                    <td class="p-5 text-center">
+                        <button onclick="hapusPeserta('${rowId}')" class="text-gray-300 hover:text-red-500 transition duration-200 p-2">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                table.appendChild(tr);
+            });
+            filterData();
+        });
+
+        // Update Nilai ke Firebase
+        window.updateNilaiFirebase = function(rowId, index, nilai) {
+            let val = Number(nilai);
+            if (val > 100) val = 100;
+            if (val < 0) val = 0;
+            
+            const specificMateriRef = ref(db, `peserta/${rowId}/materi/${index}`);
+            set(specificMateriRef, val);
+        }
+
+        // Hapus Peserta
+        window.hapusPeserta = function(id) {
+            if(confirm("Apakah Anda yakin ingin menghapus data peserta ini dari database?")) {
+                remove(ref(db, `peserta/${id}`));
+            }
+        }
+
+        // Filter Sederhana
+        window.filterData = function() {
             const selectedMonth = document.getElementById('filterMonth').value;
             const rows = document.querySelectorAll('.participant-row');
-
             rows.forEach(row => {
                 const rowMonth = row.getAttribute('data-month');
                 if (selectedMonth === 'all' || rowMonth === selectedMonth) {
@@ -167,34 +267,6 @@
                     row.style.display = "none";
                 }
             });
-        }
-
-        function updateProgress(id) {
-            const row = document.getElementById(`row-${id}`);
-            const checks = row.querySelectorAll('.prog-check');
-            const checkedCount = Array.from(checks).filter(c => c.checked).length;
-            const percentage = (checkedCount / 10) * 100;
-
-            const bar = document.getElementById(`bar-${id}`);
-            const text = document.getElementById(`text-${id}`);
-
-            bar.style.width = percentage + "%";
-            
-            if(percentage < 40) bar.className = "bg-red-500 h-full rounded-full transition-all duration-500 shadow-sm";
-            else if(percentage < 80) bar.className = "bg-yellow-500 h-full rounded-full transition-all duration-500 shadow-sm";
-            else bar.className = "bg-green-500 h-full rounded-full transition-all duration-500 shadow-sm";
-
-            text.innerText = percentage + "% Selesai";
-            
-            if(percentage === 100) {
-                text.innerHTML = '<span class="text-green-700 font-black tracking-widest"><i class="fas fa-check-circle"></i> LULUS</span>';
-            }
-        }
-
-        function hapusPeserta(id) {
-            if(confirm("Hapus peserta ini dari database sementara?")) {
-                document.getElementById(`row-${id}`).remove();
-            }
         }
     </script>
 </body>
