@@ -37,16 +37,16 @@
                 <i class="fas fa-users w-6"></i>
                 <span class="text-sm font-semibold uppercase">Trainees</span>
             </a>
-            <div class="px-6 py-2 text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-4">Cloud Status</div>
+            <div class="px-6 py-2 text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-4">Status Cloud</div>
             <div id="authStatus" class="px-6 py-2 flex items-center text-xs text-yellow-500">
-                <i class="fas fa-circle-notch fa-spin mr-2"></i> Connecting...
+                <i class="fas fa-circle-notch fa-spin mr-2"></i> Menghubungkan...
             </div>
         </nav>
 
         <div class="p-6 border-t border-gray-700">
             <button onclick="location.reload()" class="flex items-center text-gray-400 hover:text-white transition-colors w-full">
                 <i class="fas fa-sync-alt w-6"></i>
-                <span>Refresh App</span>
+                <span>Muat Ulang</span>
             </button>
         </div>
     </aside>
@@ -55,7 +55,7 @@
     <main class="flex-1 flex flex-col overflow-hidden">
         <header class="bg-white h-16 flex items-center justify-between px-8 border-b border-gray-200 shrink-0">
             <div class="text-sm font-medium text-gray-500">
-                User ID: <span id="displayUserId" class="text-gray-800 font-mono">Anonymous</span>
+                User ID: <span id="displayUserId" class="text-gray-800 font-mono">Anonim</span>
             </div>
             <div class="flex items-center space-x-3 border-l pl-6">
                 <div class="text-right">
@@ -73,7 +73,7 @@
                 <div class="lg:w-3/4">
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <h2 class="text-xl font-bold text-gray-800 uppercase">Trainee Data Management</h2>
+                            <h2 class="text-xl font-bold text-gray-800 uppercase">Manajemen Data Trainee</h2>
                             <button onclick="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center shadow-lg shadow-blue-200">
                                 <i class="fas fa-plus mr-2"></i> Tambah Trainee
                             </button>
@@ -175,9 +175,9 @@
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Status Pelatihan</label>
                     <select id="formStatus" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                        <option value="Completed">Completed</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Failed">Failed</option>
+                        <option value="Completed">Selesai</option>
+                        <option value="In Progress">Dalam Proses</option>
+                        <option value="Failed">Gagal</option>
                     </select>
                 </div>
                 <div class="pt-4 flex space-x-3">
@@ -199,7 +199,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global Variables
+        // Konfigurasi Firebase (Diisi otomatis oleh sistem)
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -212,21 +212,32 @@
 
         const updateStatus = (text, colorClass) => {
             const el = document.getElementById('authStatus');
-            el.innerHTML = `<i class="fas fa-circle ${colorClass} mr-2"></i> ${text}`;
+            if (el) el.innerHTML = `<i class="fas fa-circle ${colorClass} mr-2"></i> ${text}`;
         };
 
-        // --- AUTHENTICATION ---
-        const initAuth = async () => {
+        // --- AUTENTIKASI ---
+        const initAuth = async (retryCount = 0) => {
             try {
+                // Mencoba Login
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
             } catch (err) {
-                console.error("Auth Error:", err);
-                updateStatus('Auth Error: ' + err.code, 'text-red-500');
-                showToast("Gagal autentikasi ke cloud.");
+                console.error("FIREBASE AUTH ERROR:", err.code, err.message);
+                
+                if (err.code === 'auth/operation-not-allowed') {
+                    updateStatus('Aktifkan Anon Auth!', 'text-red-500');
+                } else if (err.code === 'auth/unauthorized-domain') {
+                    updateStatus('Domain Belum Terdaftar', 'text-red-500');
+                } else {
+                    updateStatus('Gagal: ' + err.code, 'text-red-500');
+                }
+
+                if (retryCount < 3) {
+                    setTimeout(() => initAuth(retryCount + 1), 2000);
+                }
             }
         };
 
@@ -235,45 +246,38 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
-                updateStatus('Cloud Connected', 'text-green-500');
+                updateStatus('Cloud Aktif', 'text-green-500');
                 document.getElementById('displayUserId').innerText = user.uid;
                 loadData();
             } else {
-                updateStatus('Not Logged In', 'text-red-500');
+                updateStatus('Mencoba Login...', 'text-yellow-500');
             }
         });
 
-        // --- DATA OPERATIONS ---
+        // --- OPERASI DATA ---
         function loadData() {
             if (!currentUser) return;
 
-            // Pastikan path mengikuti aturan /artifacts/{appId}/public/data/{collectionName}
+            // Koleksi: /artifacts/{appId}/public/data/trainees
             const traineesCol = collection(db, 'artifacts', appId, 'public', 'data', 'trainees');
             
-            // Listen to real-time changes
+            // OnSnapshot untuk real-time data
             onSnapshot(traineesCol, (snapshot) => {
                 trainees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderTable(trainees);
                 updateChart();
                 updateSummary();
             }, (error) => {
-                console.error("Firestore Error:", error);
-                // Jika error di sini, biasanya masalah Permission Rules
-                updateStatus('DB Error: Permission Denied', 'text-red-500');
-                showToast("Error memuat data: " + error.message);
-                
-                // Fallback UI jika data kosong atau error
-                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-red-400">Gagal mengakses database. Cek permission.</td></tr>`;
+                console.error("FIRESTORE ERROR:", error);
+                updateStatus('Izin Ditolak', 'text-red-500');
+                showToast("Cek tab 'Rules' di Firebase Console!");
             });
         }
 
-        // Simpan / Update Data
+        // Simpan / Perbarui
         document.getElementById('traineeForm').onsubmit = async (e) => {
             e.preventDefault();
-            if (!currentUser) {
-                showToast("Anda belum terautentikasi!");
-                return;
-            }
+            if (!currentUser) return showToast("Sesi cloud tidak aktif.");
             
             const docId = document.getElementById('editDocId').value;
             const data = {
@@ -287,44 +291,43 @@
 
             setLoading(true);
             try {
-                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'trainees');
                 if (docId) {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trainees', docId), data);
-                    showToast("Data diperbarui!");
+                    showToast("Data diperbarui di cloud!");
                 } else {
-                    await addDoc(colRef, { 
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'trainees'), { 
                         ...data, 
                         avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
                         createdAt: new Date().toISOString()
                     });
-                    showToast("Data baru tersimpan!");
+                    showToast("Data tersimpan ke cloud!");
                 }
                 closeModal();
             } catch (err) {
-                console.error("Save Error:", err);
-                showToast("Gagal simpan: " + err.message);
+                console.error("SAVE ERROR:", err);
+                showToast("Gagal menyimpan. Cek koneksi.");
             }
             setLoading(false);
         };
 
-        // Hapus Data
+        // Hapus
         window.deleteTrainee = async (docId) => {
-            if (!confirm("Hapus data ini?")) return;
+            if (!confirm("Hapus data ini selamanya dari Cloud?")) return;
             setLoading(true);
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trainees', docId));
-                showToast("Data dihapus!");
+                showToast("Terhapus!");
             } catch (err) {
-                showToast("Gagal hapus data.");
+                showToast("Gagal menghapus.");
             }
             setLoading(false);
         };
 
-        // --- UI HELPERS ---
+        // --- RENDER & CHART ---
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-gray-400">Belum ada data. Silakan tambah data baru.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-gray-400 italic">Database kosong. Tambah data untuk memulai.</td></tr>`;
                 return;
             }
 
@@ -359,7 +362,7 @@
             document.getElementById('formRegion').value = t.region;
             document.getElementById('formPhone').value = t.phone;
             document.getElementById('formStatus').value = t.status;
-            document.getElementById('modalTitle').innerText = "Edit Data";
+            document.getElementById('modalTitle').innerText = "Edit Data Cloud";
             document.getElementById('traineeModal').classList.remove('hidden');
         };
 
@@ -375,7 +378,7 @@
             myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Completed', 'Failed', 'In Progress'],
+                    labels: ['Selesai', 'Gagal', 'Proses'],
                     datasets: [{
                         data: [counts['Completed'], counts['Failed'], counts['In Progress']],
                         backgroundColor: ['#3b82f6', '#fb923c', '#d1d5db'],
@@ -393,11 +396,10 @@
             document.getElementById('summaryRate').innerText = total > 0 ? `${Math.round((completed/total)*100)}%` : '0%';
         }
 
-        // --- GLOBAL UI FUNCTIONS ---
         window.openModal = () => {
             document.getElementById('traineeForm').reset();
             document.getElementById('editDocId').value = "";
-            document.getElementById('modalTitle').innerText = "Tambah Trainee Baru";
+            document.getElementById('modalTitle').innerText = "Input Data Baru";
             document.getElementById('traineeModal').classList.remove('hidden');
         };
 
@@ -413,35 +415,18 @@
             renderTable(filtered);
         };
 
-        // --- EXPORT TO SPREADSHEET (CSV) ---
         window.exportToCSV = () => {
-            if (trainees.length === 0) return showToast("Tidak ada data untuk di-export.");
-            
-            // Bersihkan data dari karakter koma yang bisa merusak format CSV
+            if (trainees.length === 0) return showToast("Tidak ada data cloud.");
             const headers = ["Nama", "Supervisor", "Wilayah", "Telepon", "Status"];
-            const rows = trainees.map(t => [
-                `"${t.name.replace(/"/g, '""')}"`, 
-                `"${t.supervisor.replace(/"/g, '""')}"`, 
-                `"${t.region.replace(/"/g, '""')}"`, 
-                `"${t.phone}"`, 
-                `"${t.status}"`
-            ]);
-            
-            let csvContent = "\uFEFF"; // Byte Order Mark untuk Excel agar support UTF-8
-            csvContent += headers.join(",") + "\r\n";
-            rows.forEach(row => {
-                csvContent += row.join(",") + "\r\n";
-            });
-
+            const rows = trainees.map(t => [`"${t.name}"`, `"${t.supervisor}"`, `"${t.region}"`, `"${t.phone}"`, `"${t.status}"`]);
+            let csvContent = "\uFEFF" + headers.join(",") + "\r\n" + rows.map(e => e.join(",")).join("\r\n");
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", `Sales_Trainees_${new Date().toISOString().split('T')[0]}.csv`);
-            document.body.appendChild(link);
+            link.href = url;
+            link.download = `Cloud_Export.csv`;
             link.click();
-            document.body.removeChild(link);
-            showToast("CSV berhasil diunduh.");
+            showToast("CSV Berhasil diunduh.");
         };
 
         function getStatusColor(s) {
