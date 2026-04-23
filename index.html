@@ -3,23 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Training Tracker - Admin Dashboard</title>
+    <title>Sales Training Tracker - Firebase Integration</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js untuk grafik donut -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.1); }
-        .sidebar-active { background-color: rgba(255, 255, 255, 0.15); border-left: 4px solid #fff; }
+        .sidebar-active { background-color: rgba(255, 255, 255, 0.15); border-left: 4px solid #3b82f6; }
         canvas { max-width: 100% !important; height: auto !important; }
+        .loading-overlay { background: rgba(255,255,255,0.7); z-index: 100; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex">
 
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 loading-overlay flex items-center justify-center hidden">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+
     <!-- Sidebar -->
-    <aside class="w-64 bg-[#1e293b] text-white flex flex-col hidden md:flex">
+    <aside class="w-64 bg-[#1e293b] text-white flex flex-col hidden md:flex shrink-0">
         <div class="p-6 flex items-center space-x-3">
             <div class="bg-blue-500 p-2 rounded-lg">
                 <i class="fas fa-globe text-white text-xl"></i>
@@ -28,65 +33,40 @@
         </div>
 
         <nav class="flex-1 mt-6">
-            <a href="#" class="sidebar-item flex items-center px-6 py-3 text-gray-400">
-                <i class="fas fa-th-large w-6"></i>
-                <span>DASHBOARD</span>
-            </a>
             <a href="#" class="sidebar-active flex items-center px-6 py-3 text-white">
                 <i class="fas fa-users w-6"></i>
-                <span>TRAINEES</span>
+                <span class="text-sm font-semibold uppercase">Trainees</span>
             </a>
-            <a href="#" class="sidebar-item flex items-center px-6 py-3 text-gray-400">
-                <i class="fas fa-clipboard-list w-6"></i>
-                <span>TRAININGS</span>
-            </a>
-            <a href="#" class="sidebar-item flex items-center px-6 py-3 text-gray-400">
-                <i class="fas fa-chart-bar w-6"></i>
-                <span>REPORTS</span>
-            </a>
-            <a href="#" class="sidebar-item flex items-center px-6 py-3 text-gray-400">
-                <i class="fas fa-cog w-6"></i>
-                <span>SETTINGS</span>
-            </a>
+            <div class="px-6 py-2 text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-4">Cloud Status</div>
+            <div id="authStatus" class="px-6 py-2 flex items-center text-xs text-yellow-500">
+                <i class="fas fa-circle-notch fa-spin mr-2"></i> Connecting...
+            </div>
         </nav>
 
         <div class="p-6 border-t border-gray-700">
-            <a href="#" class="flex items-center text-gray-400 hover:text-white mb-4">
-                <i class="fas fa-cog w-6"></i>
-                <span>SETTINGS</span>
-            </a>
-            <a href="#" class="flex items-center text-gray-400 hover:text-white">
-                <i class="fas fa-sign-out-alt w-6"></i>
-                <span>LOGOUT</span>
-            </a>
+            <button onclick="location.reload()" class="flex items-center text-gray-400 hover:text-white transition-colors w-full">
+                <i class="fas fa-sync-alt w-6"></i>
+                <span>Refresh App</span>
+            </button>
         </div>
     </aside>
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col overflow-hidden">
-        
-        <!-- Top Header -->
-        <header class="bg-white h-16 flex items-center justify-end px-8 border-b border-gray-200">
-            <div class="flex items-center space-x-6">
-                <button class="text-gray-500 hover:text-gray-700">
-                    <i class="far fa-user mr-2"></i>Profile
-                </button>
-                <button class="text-gray-500 hover:text-gray-700 relative">
-                    <i class="far fa-bell mr-2"></i>Notifications
-                    <span class="absolute -top-1 right-0 bg-red-500 w-2 h-2 rounded-full border-2 border-white"></span>
-                </button>
-                <div class="flex items-center space-x-3 border-l pl-6">
-                    <div class="text-right">
-                        <p class="text-xs text-gray-400">Admin Name:</p>
-                        <p class="text-sm font-semibold text-gray-700">Sarah J.</p>
-                    </div>
-                    <img src="https://i.pravatar.cc/150?u=sarah" alt="Admin" class="w-10 h-10 rounded-full border-2 border-blue-100">
+        <header class="bg-white h-16 flex items-center justify-between px-8 border-b border-gray-200 shrink-0">
+            <div class="text-sm font-medium text-gray-500">
+                User ID: <span id="displayUserId" class="text-gray-800 font-mono">Anonymous</span>
+            </div>
+            <div class="flex items-center space-x-3 border-l pl-6">
+                <div class="text-right">
+                    <p class="text-xs text-gray-400">Admin:</p>
+                    <p class="text-sm font-semibold text-gray-700">Sarah J.</p>
                 </div>
+                <img src="https://i.pravatar.cc/150?u=sarah" alt="Admin" class="w-10 h-10 rounded-full border-2 border-blue-100">
             </div>
         </header>
 
-        <!-- Dashboard Content -->
-        <div class="flex-1 overflow-y-auto p-8">
+        <div class="flex-1 overflow-y-auto p-8 bg-gray-50">
             <div class="flex flex-col lg:flex-row gap-8">
                 
                 <!-- Table Section -->
@@ -94,215 +74,365 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <h2 class="text-xl font-bold text-gray-800 uppercase">Trainee Data Management</h2>
-                            <button class="bg-[#2563eb] text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center">
-                                <i class="fas fa-plus mr-2"></i> Add New Trainee
+                            <button onclick="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center shadow-lg shadow-blue-200">
+                                <i class="fas fa-plus mr-2"></i> Tambah Trainee
                             </button>
                         </div>
 
-                        <!-- Search and Filter Bar -->
+                        <!-- Search and Filter -->
                         <div class="px-6 py-4 bg-gray-50 border-y border-gray-100 flex flex-wrap items-center gap-4">
-                            <div class="relative flex-1 min-w-[300px]">
+                            <div class="relative flex-1 min-w-[250px]">
                                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                                     <i class="fas fa-search"></i>
                                 </span>
-                                <input type="text" placeholder="Search by Name, Supervisor, or Region..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition">
+                                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari Nama, Supervisor, atau Wilayah..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition text-sm">
                             </div>
                             
-                            <div class="flex items-center space-x-2">
-                                <label class="text-sm text-gray-500">Month:</label>
-                                <select id="monthSelect" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none">
-                                    <option value="oct">October 2023</option>
-                                    <option value="nov">November 2023</option>
-                                </select>
-                            </div>
-
-                            <div class="flex items-center space-x-2">
-                                <label class="text-sm text-gray-500">Status:</label>
-                                <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none">
-                                    <option>All</option>
-                                    <option>Completed</option>
-                                    <option>In Progress</option>
-                                </select>
-                            </div>
-
-                            <div class="relative group">
-                                <button class="flex items-center bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
-                                    <i class="fas fa-download mr-2 text-gray-400"></i> Export
-                                    <i class="fas fa-chevron-down ml-2 text-gray-400"></i>
-                                </button>
-                                <!-- Export Tooltip/Dropdown Mockup -->
-                                <div class="absolute right-0 mt-2 w-48 bg-[#1a1a1a] text-white rounded-lg shadow-xl py-2 hidden group-hover:block z-50">
-                                    <button class="w-full text-left px-4 py-2 hover:bg-gray-800 flex items-center transition" onclick="alert('Mengekspor ke Google Sheets...')">
-                                        <div class="bg-green-600 w-5 h-5 rounded flex items-center justify-center mr-3 text-[10px]">
-                                            <i class="fas fa-table"></i>
-                                        </div>
-                                        Export to Google Sheets
-                                    </button>
-                                </div>
-                            </div>
+                            <button onclick="exportToCSV()" class="flex items-center bg-green-600 text-white border border-transparent px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">
+                                <i class="fas fa-file-excel mr-2"></i> Export ke Sheets
+                            </button>
                         </div>
 
                         <!-- Table -->
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left">
+                            <table class="w-full text-left" id="traineeTable">
                                 <thead>
-                                    <tr class="bg-[#2563eb] text-white text-sm uppercase tracking-wider">
-                                        <th class="px-6 py-4 font-semibold">Select</th>
-                                        <th class="px-6 py-4 font-semibold">Name <i class="fas fa-caret-down ml-1"></i></th>
-                                        <th class="px-6 py-4 font-semibold">Supervisor <i class="fas fa-arrows-alt-v ml-1"></i></th>
-                                        <th class="px-6 py-4 font-semibold">Manager</th>
-                                        <th class="px-6 py-4 font-semibold">Region <i class="fas fa-arrows-alt-v ml-1"></i></th>
-                                        <th class="px-6 py-4 font-semibold">Phone Number</th>
-                                        <th class="px-6 py-4 font-semibold">Training Status <i class="fas fa-arrows-alt-v ml-1"></i></th>
-                                        <th class="px-6 py-4 font-semibold text-center">Actions</th>
+                                    <tr class="bg-blue-600 text-white text-xs uppercase tracking-wider">
+                                        <th class="px-6 py-4 font-semibold">Nama Trainee</th>
+                                        <th class="px-6 py-4 font-semibold">Supervisor</th>
+                                        <th class="px-6 py-4 font-semibold">Wilayah</th>
+                                        <th class="px-6 py-4 font-semibold">Telepon</th>
+                                        <th class="px-6 py-4 font-semibold text-center">Status</th>
+                                        <th class="px-6 py-4 font-semibold text-center">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <tr class="hover:bg-blue-50 transition">
-                                        <td class="px-6 py-4 text-center"><input type="checkbox" class="rounded text-blue-600"></td>
-                                        <td class="px-6 py-4 flex items-center space-x-3">
-                                            <img src="https://i.pravatar.cc/150?u=andi" class="w-8 h-8 rounded-full">
-                                            <span class="font-medium text-gray-700">Andi Prasetyo</span>
-                                        </td>
-                                        <td class="px-6 py-4 text-sm text-gray-600">Andi Prasetyo</td>
-                                        <td class="px-6 py-4 text-sm text-gray-600">Sarah J.</td>
-                                        <td class="px-6 py-4 text-sm text-gray-600">DKI Jakarta</td>
-                                        <td class="px-6 py-4 text-sm text-gray-600">+62 812-3456-7890</td>
-                                        <td class="px-6 py-4">
-                                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Completed</span>
-                                        </td>
-                                        <td class="px-6 py-4 text-center">
-                                            <div class="flex justify-center space-x-2 text-gray-400">
-                                                <button class="hover:text-blue-600"><i class="far fa-edit"></i></button>
-                                                <button class="hover:text-blue-600"><i class="far fa-eye"></i></button>
-                                                <button class="hover:text-red-600"><i class="far fa-trash-alt"></i></button>
-                                            </div>
+                                <tbody class="divide-y divide-gray-100" id="tableBody">
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-10 text-center text-gray-400 italic">
+                                            <i class="fas fa-spinner fa-spin mr-2"></i> Memuat data dari Firestore...
                                         </td>
                                     </tr>
-                                    <!-- Baris lainnya tetap sama -->
                                 </tbody>
                             </table>
-                        </div>
-
-                        <!-- Pagination -->
-                        <div class="p-6 border-t border-gray-100 flex items-center justify-between">
-                            <p class="text-sm text-gray-500">Showing 1 to 5 of 124 entries</p>
-                            <div class="flex items-center space-x-2">
-                                <button class="px-3 py-1 text-gray-500 hover:text-blue-600 font-medium">Previous</button>
-                                <button class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold flex items-center justify-center">1</button>
-                                <button class="px-3 py-1 text-gray-800 font-bold">Next</button>
-                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Widgets Section -->
                 <div class="lg:w-1/4 space-y-6">
-                    
-                    <!-- Chart Performa Lulus (Baru) -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 uppercase tracking-tight text-sm">Persentase Kelulusan</h3>
-                        <div class="relative h-48 flex items-center justify-center">
+                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 uppercase tracking-tight text-xs">Statistik Kelulusan</h3>
+                        <div class="relative h-48">
                             <canvas id="passingChart"></canvas>
                         </div>
-                        <div class="mt-4 flex justify-between text-xs font-medium border-t pt-3">
-                            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>Lulus</div>
-                            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-orange-400 mr-2"></span>Gagal</div>
-                            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-gray-300 mr-2"></span>Proses</div>
-                        </div>
                     </div>
 
-                    <!-- Quick Summary Card -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 uppercase tracking-tight text-sm">Quick Summary</h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center text-sm">
-                                <span class="text-gray-500">Total Trainees</span>
-                                <span id="summaryTotal" class="font-bold text-gray-800">124</span>
+                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 uppercase tracking-tight text-xs">Ringkasan Cepat</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500 text-sm">Total Trainees</span>
+                                <span id="summaryTotal" class="text-lg font-bold text-blue-600">0</span>
                             </div>
-                            <div class="flex justify-between items-center text-sm">
-                                <span class="text-gray-500">In Training</span>
-                                <span id="summaryTraining" class="font-bold text-gray-800">48</span>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500 text-sm">Tingkat Keberhasilan</span>
+                                <span id="summaryRate" class="text-lg font-bold text-green-600">0%</span>
                             </div>
-                            <div class="flex justify-between items-center text-sm">
-                                <span class="text-gray-500">Completed</span>
-                                <span id="summaryCompleted" class="font-bold text-gray-800">76</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Upcoming Training Card -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 uppercase tracking-tight text-sm">Upcoming Training</h3>
-                        <div class="space-y-1">
-                            <p class="text-sm font-bold text-gray-800">Budi Hartono -</p>
-                            <p class="text-sm font-bold text-gray-800">Advanced Sales Skills</p>
-                            <p class="text-xs text-gray-400 mt-1 uppercase font-medium tracking-widest">Oct 28</p>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </main>
 
-    <script>
-        // Data Dummy untuk Chart berdasarkan bulan
-        const chartData = {
-            oct: [76, 12, 36], // [Lulus, Gagal, Proses]
-            nov: [85, 5, 34]
-        };
+    <!-- Modal Form -->
+    <div id="traineeModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                <h3 id="modalTitle" class="text-white font-bold">Input Data Trainee</h3>
+                <button onclick="closeModal()" class="text-white hover:text-gray-200 text-xl">&times;</button>
+            </div>
+            <form id="traineeForm" class="p-6 space-y-4">
+                <input type="hidden" id="editDocId">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Lengkap</label>
+                    <input type="text" id="formName" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Supervisor</label>
+                        <input type="text" id="formSup" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Wilayah</label>
+                        <input type="text" id="formRegion" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nomor Telepon</label>
+                    <input type="text" id="formPhone" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Status Pelatihan</label>
+                    <select id="formStatus" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="Completed">Completed</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Failed">Failed</option>
+                    </select>
+                </div>
+                <div class="pt-4 flex space-x-3">
+                    <button type="button" onclick="closeModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">Batal</button>
+                    <button type="submit" id="submitBtn" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-lg">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-        const summaryData = {
-            oct: { total: 124, training: 48, completed: 76 },
-            nov: { total: 124, training: 34, completed: 85 }
-        };
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-[200] hidden transform transition-all duration-300 translate-y-10 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center">
+        <span id="toastMsg"></span>
+    </div>
 
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Variables
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        let trainees = [];
         let myChart;
+        let currentUser = null;
 
-        function initChart(dataKey) {
-            const ctx = document.getElementById('passingChart').getContext('2d');
+        // --- AUTHENTICATION ---
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth Error:", err);
+                showToast("Gagal terhubung ke server cloud.");
+            }
+        };
+
+        initAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('authStatus').innerHTML = '<i class="fas fa-circle text-green-500 mr-2"></i> Cloud Connected';
+                document.getElementById('displayUserId').innerText = user.uid;
+                loadData();
+            }
+        });
+
+        // --- DATA OPERATIONS ---
+        function loadData() {
+            if (!currentUser) return;
+
+            const traineesCol = collection(db, 'artifacts', appId, 'public', 'data', 'trainees');
             
-            if (myChart) {
-                myChart.destroy();
+            // Listen to real-time changes
+            onSnapshot(traineesCol, (snapshot) => {
+                trainees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderTable(trainees);
+                updateChart();
+                updateSummary();
+            }, (error) => {
+                console.error("Listen error:", error);
+                showToast("Izin ditolak atau database belum siap.");
+            });
+        }
+
+        // Simpan / Update Data
+        document.getElementById('traineeForm').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+            
+            const docId = document.getElementById('editDocId').value;
+            const data = {
+                name: document.getElementById('formName').value,
+                supervisor: document.getElementById('formSup').value,
+                region: document.getElementById('formRegion').value,
+                phone: document.getElementById('formPhone').value,
+                status: document.getElementById('formStatus').value,
+                updatedAt: new Date().toISOString()
+            };
+
+            setLoading(true);
+            try {
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'trainees');
+                if (docId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trainees', docId), data);
+                    showToast("Data diperbarui di cloud!");
+                } else {
+                    await addDoc(colRef, { ...data, avatar: `https://i.pravatar.cc/150?u=${Math.random()}` });
+                    showToast("Data baru tersimpan di cloud!");
+                }
+                closeModal();
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan data.");
+            }
+            setLoading(false);
+        };
+
+        // Hapus Data
+        window.deleteTrainee = async (docId) => {
+            if (!confirm("Hapus data ini secara permanen dari cloud?")) return;
+            setLoading(true);
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trainees', docId));
+                showToast("Data dihapus!");
+            } catch (err) {
+                showToast("Gagal menghapus data.");
+            }
+            setLoading(false);
+        };
+
+        // --- UI HELPERS ---
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-gray-400">Belum ada data di Firestore.</td></tr>`;
+                return;
             }
 
+            tbody.innerHTML = data.map((item, index) => `
+                <tr class="hover:bg-blue-50 transition border-b border-gray-100">
+                    <td class="px-6 py-4 flex items-center space-x-3">
+                        <img src="${item.avatar || 'https://i.pravatar.cc/150'}" class="w-8 h-8 rounded-full shadow-sm">
+                        <span class="font-medium text-gray-800">${item.name}</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${item.supervisor}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${item.region}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${item.phone}</td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusColor(item.status)}">${item.status}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex justify-center space-x-3 text-gray-400">
+                            <button onclick="editTrainee('${item.id}')" class="hover:text-blue-600 transition"><i class="far fa-edit"></i></button>
+                            <button onclick="deleteTrainee('${item.id}')" class="hover:text-red-600 transition"><i class="far fa-trash-alt"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.editTrainee = (docId) => {
+            const t = trainees.find(x => x.id === docId);
+            if (!t) return;
+            document.getElementById('editDocId').value = docId;
+            document.getElementById('formName').value = t.name;
+            document.getElementById('formSup').value = t.supervisor;
+            document.getElementById('formRegion').value = t.region;
+            document.getElementById('formPhone').value = t.phone;
+            document.getElementById('formStatus').value = t.status;
+            document.getElementById('modalTitle').innerText = "Edit Data Cloud";
+            document.getElementById('traineeModal').classList.remove('hidden');
+        };
+
+        function updateChart() {
+            const counts = {
+                'Completed': trainees.filter(t => t.status === 'Completed').length,
+                'Failed': trainees.filter(t => t.status === 'Failed').length,
+                'In Progress': trainees.filter(t => t.status === 'In Progress').length
+            };
+
+            const ctx = document.getElementById('passingChart').getContext('2d');
+            if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Lulus', 'Gagal', 'Proses'],
+                    labels: ['Completed', 'Failed', 'In Progress'],
                     datasets: [{
-                        data: chartData[dataKey],
+                        data: [counts['Completed'], counts['Failed'], counts['In Progress']],
                         backgroundColor: ['#3b82f6', '#fb923c', '#d1d5db'],
                         borderWidth: 0,
-                        hoverOffset: 4
                     }]
                 },
-                options: {
-                    cutout: '70%',
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
+                options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
-
-            // Update Ringkasan Teks
-            document.getElementById('summaryTotal').innerText = summaryData[dataKey].total;
-            document.getElementById('summaryTraining').innerText = summaryData[dataKey].training;
-            document.getElementById('summaryCompleted').innerText = summaryData[dataKey].completed;
         }
 
-        // Event listener saat bulan berubah
-        document.getElementById('monthSelect').addEventListener('change', (e) => {
-            initChart(e.target.value);
-        });
+        function updateSummary() {
+            const total = trainees.length;
+            const completed = trainees.filter(t => t.status === 'Completed').length;
+            document.getElementById('summaryTotal').innerText = total;
+            document.getElementById('summaryRate').innerText = total > 0 ? `${Math.round((completed/total)*100)}%` : '0%';
+        }
 
-        // Jalankan saat pertama kali load
-        window.onload = () => {
-            initChart('oct');
+        // --- GLOBAL UI FUNCTIONS ---
+        window.openModal = () => {
+            document.getElementById('traineeForm').reset();
+            document.getElementById('editDocId').value = "";
+            document.getElementById('modalTitle').innerText = "Tambah Trainee Baru";
+            document.getElementById('traineeModal').classList.remove('hidden');
         };
+
+        window.closeModal = () => document.getElementById('traineeModal').classList.add('hidden');
+
+        window.filterTable = () => {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = trainees.filter(t => 
+                t.name.toLowerCase().includes(q) || 
+                t.supervisor.toLowerCase().includes(q) || 
+                t.region.toLowerCase().includes(q)
+            );
+            renderTable(filtered);
+        };
+
+        // --- EXPORT TO SPREADSHEET (CSV) ---
+        window.exportToCSV = () => {
+            if (trainees.length === 0) return showToast("Tidak ada data untuk di-export.");
+            
+            const headers = ["Nama", "Supervisor", "Wilayah", "Telepon", "Status"];
+            const rows = trainees.map(t => [t.name, t.supervisor, t.region, t.phone, t.status]);
+            
+            let csvContent = "data:text/csv;charset=utf-8," 
+                + headers.join(",") + "\n"
+                + rows.map(e => e.join(",")).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Sales_Training_Data_${new Date().toLocaleDateString()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("File CSV siap dibuka di Google Sheets!");
+        };
+
+        function getStatusColor(s) {
+            if (s === 'Completed') return "bg-green-100 text-green-700";
+            if (s === 'Failed') return "bg-red-100 text-red-700";
+            return "bg-orange-100 text-orange-700";
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            t.classList.remove('hidden', 'translate-y-10');
+            setTimeout(() => {
+                t.classList.add('translate-y-10');
+                setTimeout(() => t.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        function setLoading(val) {
+            const loader = document.getElementById('loadingOverlay');
+            val ? loader.classList.remove('hidden') : loader.classList.add('hidden');
+        }
     </script>
 </body>
 </html>
