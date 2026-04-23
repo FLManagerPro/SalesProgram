@@ -3,271 +3,306 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Trainer Dashboard - SDP </title>
+    <title>Sales Training Tracker - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js untuk grafik donut -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Custom hide spin buttons for chrome/safari */
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .sidebar-active { background-color: rgba(255, 255, 255, 0.15); border-left: 4px solid #fff; }
+        canvas { max-width: 100% !important; height: auto !important; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-900">
+<body class="bg-gray-100 min-h-screen flex">
 
-    <div class="flex flex-col md:flex-row min-h-screen">
-        <div class="w-full md:w-64 bg-slate-900 text-white p-6 shadow-xl">
-            <h1 class="text-2xl font-bold mb-8 text-yellow-500">
-                HRTVerse 
-                <span class="text-white text-xs block font-normal opacity-70">Sales Development Program</span>
-            </h1>
-            <nav>
-                <a href="#" class="flex items-center py-3 px-4 rounded-lg bg-blue-600 text-white shadow-lg transition duration-200">
-                    <i class="fas fa-chart-line mr-3"></i> Monitor & Nilai
-                </a>
-            </nav>
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[#1e293b] text-white flex flex-col hidden md:flex">
+        <div class="p-6 flex items-center space-x-3">
+            <div class="bg-blue-500 p-2 rounded-lg">
+                <i class="fas fa-globe text-white text-xl"></i>
+            </div>
+            <h1 class="font-bold text-lg leading-tight uppercase tracking-wider">Sales Training<br>Tracker</h1>
         </div>
 
-        <div class="flex-1 p-4 md:p-8">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div>
-                    <h2 class="text-3xl font-extrabold text-slate-800">Dashboard Admin</h2>
-                    <p class="text-gray-500">Manajemen Nilai & Progress Peserta SDP</p>
-                </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-yellow-500">
-                    <div class="text-xs text-gray-400 uppercase font-bold tracking-wider">Hari Pelatihan</div>
-                    <div class="text-sm text-slate-700 font-medium italic mb-1">Selasa, Rabu, Jumat</div>
-                    <div id="current-date" class="text-lg font-bold text-slate-800"></div>
+        <nav class="flex-1 mt-6">
+            <a href="#" class="sidebar-item flex items-center px-6 py-3 text-gray-400">
+                <i class="fas fa-th-large w-6"></i>
+                <span>DASHBOARD</span>
+            </a>
+            <a href="#" class="sidebar-active flex items-center px-6 py-3 text-white">
+                <i class="fas fa-users w-6"></i>
+                <span>TRAINEES</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center px-6 py-3 text-gray-400">
+                <i class="fas fa-clipboard-list w-6"></i>
+                <span>TRAININGS</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center px-6 py-3 text-gray-400">
+                <i class="fas fa-chart-bar w-6"></i>
+                <span>REPORTS</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center px-6 py-3 text-gray-400">
+                <i class="fas fa-cog w-6"></i>
+                <span>SETTINGS</span>
+            </a>
+        </nav>
+
+        <div class="p-6 border-t border-gray-700">
+            <a href="#" class="flex items-center text-gray-400 hover:text-white mb-4">
+                <i class="fas fa-cog w-6"></i>
+                <span>SETTINGS</span>
+            </a>
+            <a href="#" class="flex items-center text-gray-400 hover:text-white">
+                <i class="fas fa-sign-out-alt w-6"></i>
+                <span>LOGOUT</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+        
+        <!-- Top Header -->
+        <header class="bg-white h-16 flex items-center justify-end px-8 border-b border-gray-200">
+            <div class="flex items-center space-x-6">
+                <button class="text-gray-500 hover:text-gray-700">
+                    <i class="far fa-user mr-2"></i>Profile
+                </button>
+                <button class="text-gray-500 hover:text-gray-700 relative">
+                    <i class="far fa-bell mr-2"></i>Notifications
+                    <span class="absolute -top-1 right-0 bg-red-500 w-2 h-2 rounded-full border-2 border-white"></span>
+                </button>
+                <div class="flex items-center space-x-3 border-l pl-6">
+                    <div class="text-right">
+                        <p class="text-xs text-gray-400">Admin Name:</p>
+                        <p class="text-sm font-semibold text-gray-700">Sarah J.</p>
+                    </div>
+                    <img src="https://i.pravatar.cc/150?u=sarah" alt="Admin" class="w-10 h-10 rounded-full border-2 border-blue-100">
                 </div>
             </div>
+        </header>
 
-            <div class="bg-white p-6 rounded-2xl shadow-sm mb-8 border border-gray-200">
-                <h3 class="text-lg font-bold mb-4 text-gray-700 flex items-center">
-                    <i class="fas fa-user-plus mr-2 text-blue-500"></i> Tambah Peserta Baru
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <input type="text" id="p_name" placeholder="Nama Lengkap" class="border border-gray-300 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
-                    <input type="text" id="p_posisi" placeholder="Posisi / Batch" class="border border-gray-300 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
-                    <select id="p_month" class="border border-gray-300 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition bg-white text-gray-600">
-                        <option value="01">Januari</option>
-                        <option value="02">Februari</option>
-                        <option value="03">Maret</option>
-                        <option value="04">April</option>
-                        <option value="05">Mei</option>
-                        <option value="06">Juni</option>
-                        <option value="07">Juli</option>
-                        <option value="08">Agustus</option>
-                        <option value="09">September</option>
-                        <option value="10">Oktober</option>
-                        <option value="11">November</option>
-                        <option value="12">Desember</option>
-                    </select>
-                    <button onclick="tambahPeserta()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl transition duration-300 font-bold shadow-md flex items-center justify-center">
-                        <i class="fas fa-save mr-2"></i> Daftarkan
-                    </button>
-                </div>
-            </div>
+        <!-- Dashboard Content -->
+        <div class="flex-1 overflow-y-auto p-8">
+            <div class="flex flex-col lg:flex-row gap-8">
+                
+                <!-- Table Section -->
+                <div class="lg:w-3/4">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <h2 class="text-xl font-bold text-gray-800 uppercase">Trainee Data Management</h2>
+                            <button class="bg-[#2563eb] text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center">
+                                <i class="fas fa-plus mr-2"></i> Add New Trainee
+                            </button>
+                        </div>
 
-            <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200">
-                <div class="p-5 bg-gray-50 border-b flex flex-col md:flex-row justify-between items-center gap-4">
-                    <h3 class="font-bold text-slate-700 flex items-center uppercase tracking-wide">
-                        <span class="w-2 h-6 bg-yellow-500 rounded-full mr-3"></span>
-                        Data Monitoring Peserta
-                    </h3>
-                    
-                    <div class="flex items-center gap-3 bg-white px-4 py-1.5 rounded-full border shadow-sm">
-                        <i class="fas fa-filter text-gray-400 text-sm"></i>
-                        <label class="text-xs font-bold text-gray-500 uppercase">Filter:</label>
-                        <select id="filterMonth" onchange="filterData()" class="bg-transparent text-sm font-semibold focus:outline-none cursor-pointer">
-                            <option value="all">Semua Bulan</option>
-                            <option value="01">Januari</option>
-                            <option value="02">Februari</option>
-                            <option value="03">Maret</option>
-                            <option value="04">April</option>
-                            <option value="05">Mei</option>
-                            <option value="06">Juni</option>
-                            <option value="07">Juli</option>
-                            <option value="08">Agustus</option>
-                            <option value="09">September</option>
-                            <option value="10">Oktober</option>
-                            <option value="11">November</option>
-                            <option value="12">Desember</option>
-                        </select>
+                        <!-- Search and Filter Bar -->
+                        <div class="px-6 py-4 bg-gray-50 border-y border-gray-100 flex flex-wrap items-center gap-4">
+                            <div class="relative flex-1 min-w-[300px]">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" placeholder="Search by Name, Supervisor, or Region..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition">
+                            </div>
+                            
+                            <div class="flex items-center space-x-2">
+                                <label class="text-sm text-gray-500">Month:</label>
+                                <select id="monthSelect" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                                    <option value="oct">October 2023</option>
+                                    <option value="nov">November 2023</option>
+                                </select>
+                            </div>
+
+                            <div class="flex items-center space-x-2">
+                                <label class="text-sm text-gray-500">Status:</label>
+                                <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                                    <option>All</option>
+                                    <option>Completed</option>
+                                    <option>In Progress</option>
+                                </select>
+                            </div>
+
+                            <div class="relative group">
+                                <button class="flex items-center bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
+                                    <i class="fas fa-download mr-2 text-gray-400"></i> Export
+                                    <i class="fas fa-chevron-down ml-2 text-gray-400"></i>
+                                </button>
+                                <!-- Export Tooltip/Dropdown Mockup -->
+                                <div class="absolute right-0 mt-2 w-48 bg-[#1a1a1a] text-white rounded-lg shadow-xl py-2 hidden group-hover:block z-50">
+                                    <button class="w-full text-left px-4 py-2 hover:bg-gray-800 flex items-center transition" onclick="alert('Mengekspor ke Google Sheets...')">
+                                        <div class="bg-green-600 w-5 h-5 rounded flex items-center justify-center mr-3 text-[10px]">
+                                            <i class="fas fa-table"></i>
+                                        </div>
+                                        Export to Google Sheets
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="bg-[#2563eb] text-white text-sm uppercase tracking-wider">
+                                        <th class="px-6 py-4 font-semibold">Select</th>
+                                        <th class="px-6 py-4 font-semibold">Name <i class="fas fa-caret-down ml-1"></i></th>
+                                        <th class="px-6 py-4 font-semibold">Supervisor <i class="fas fa-arrows-alt-v ml-1"></i></th>
+                                        <th class="px-6 py-4 font-semibold">Manager</th>
+                                        <th class="px-6 py-4 font-semibold">Region <i class="fas fa-arrows-alt-v ml-1"></i></th>
+                                        <th class="px-6 py-4 font-semibold">Phone Number</th>
+                                        <th class="px-6 py-4 font-semibold">Training Status <i class="fas fa-arrows-alt-v ml-1"></i></th>
+                                        <th class="px-6 py-4 font-semibold text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr class="hover:bg-blue-50 transition">
+                                        <td class="px-6 py-4 text-center"><input type="checkbox" class="rounded text-blue-600"></td>
+                                        <td class="px-6 py-4 flex items-center space-x-3">
+                                            <img src="https://i.pravatar.cc/150?u=andi" class="w-8 h-8 rounded-full">
+                                            <span class="font-medium text-gray-700">Andi Prasetyo</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">Andi Prasetyo</td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">Sarah J.</td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">DKI Jakarta</td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">+62 812-3456-7890</td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Completed</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <div class="flex justify-center space-x-2 text-gray-400">
+                                                <button class="hover:text-blue-600"><i class="far fa-edit"></i></button>
+                                                <button class="hover:text-blue-600"><i class="far fa-eye"></i></button>
+                                                <button class="hover:text-red-600"><i class="far fa-trash-alt"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <!-- Baris lainnya tetap sama -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="p-6 border-t border-gray-100 flex items-center justify-between">
+                            <p class="text-sm text-gray-500">Showing 1 to 5 of 124 entries</p>
+                            <div class="flex items-center space-x-2">
+                                <button class="px-3 py-1 text-gray-500 hover:text-blue-600 font-medium">Previous</button>
+                                <button class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold flex items-center justify-center">1</button>
+                                <button class="px-3 py-1 text-gray-800 font-bold">Next</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50 text-gray-400 uppercase text-[11px] font-black tracking-widest border-b">
-                            <tr>
-                                <th class="p-5">Peserta</th>
-                                <th class="p-5 text-center">Input Nilai Per Materi (0-100)</th>
-                                <th class="p-5">Rata-rata & Status</th>
-                                <th class="p-5 text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="list-peserta" class="divide-y divide-gray-100">
-                            </tbody>
-                    </table>
+                <!-- Widgets Section -->
+                <div class="lg:w-1/4 space-y-6">
+                    
+                    <!-- Chart Performa Lulus (Baru) -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 uppercase tracking-tight text-sm">Persentase Kelulusan</h3>
+                        <div class="relative h-48 flex items-center justify-center">
+                            <canvas id="passingChart"></canvas>
+                        </div>
+                        <div class="mt-4 flex justify-between text-xs font-medium border-t pt-3">
+                            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>Lulus</div>
+                            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-orange-400 mr-2"></span>Gagal</div>
+                            <div class="flex items-center"><span class="w-2 h-2 rounded-full bg-gray-300 mr-2"></span>Proses</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Summary Card -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 uppercase tracking-tight text-sm">Quick Summary</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">Total Trainees</span>
+                                <span id="summaryTotal" class="font-bold text-gray-800">124</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">In Training</span>
+                                <span id="summaryTraining" class="font-bold text-gray-800">48</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-500">Completed</span>
+                                <span id="summaryCompleted" class="font-bold text-gray-800">76</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Training Card -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 uppercase tracking-tight text-sm">Upcoming Training</h3>
+                        <div class="space-y-1">
+                            <p class="text-sm font-bold text-gray-800">Budi Hartono -</p>
+                            <p class="text-sm font-bold text-gray-800">Advanced Sales Skills</p>
+                            <p class="text-xs text-gray-400 mt-1 uppercase font-medium tracking-widest">Oct 28</p>
+                        </div>
+                    </div>
                 </div>
+
             </div>
         </div>
-    </div>
+    </main>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, remove, update } 
-        from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        // GANTI INI DENGAN KONFIGURASI FIREBASE ANDA
-        const firebaseConfig = {
-            apiKey: "AIzaSy...",
-            authDomain: "projek-anda.firebaseapp.com",
-            databaseURL: "https://projek-anda-default-rtdb.firebaseio.com",
-            projectId: "projek-anda",
-            storageBucket: "projek-anda.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:12345:web:abcdef"
+    <script>
+        // Data Dummy untuk Chart berdasarkan bulan
+        const chartData = {
+            oct: [76, 12, 36], // [Lulus, Gagal, Proses]
+            nov: [85, 5, 34]
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const pesertaRef = ref(db, 'peserta');
+        const summaryData = {
+            oct: { total: 124, training: 48, completed: 76 },
+            nov: { total: 124, training: 34, completed: 85 }
+        };
 
-        // Set Tanggal Hari Ini
-        const now = new Date();
-        const options = { day: 'numeric', month: 'long', year: 'numeric' };
-        document.getElementById('current-date').innerText = now.toLocaleDateString('id-ID', options);
-        document.getElementById('p_month').value = String(now.getMonth() + 1).padStart(2, '0');
+        let myChart;
 
-        // Tambah Peserta ke Firebase
-        window.tambahPeserta = function() {
-            const name = document.getElementById('p_name').value;
-            const posisi = document.getElementById('p_posisi').value;
-            const bulan = document.getElementById('p_month').value;
-            const bulanTeks = document.getElementById('p_month').options[document.getElementById('p_month').selectedIndex].text;
-
-            if (name === "" || posisi === "") return alert("Mohon lengkapi nama dan posisi!");
-
-            const newPesertaRef = push(pesertaRef);
-            set(newPesertaRef, {
-                name: name,
-                posisi: posisi,
-                bulan: bulan,
-                bulanTeks: bulanTeks,
-                materi: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] // Default nilai 0 untuk 10 materi
-            }).then(() => {
-                document.getElementById('p_name').value = "";
-                document.getElementById('p_posisi').value = "";
-            });
-        }
-
-        // Render Data Realtime
-        onValue(pesertaRef, (snapshot) => {
-            const table = document.getElementById('list-peserta');
-            table.innerHTML = "";
-            const data = snapshot.val();
-
-            if (!data) {
-                table.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-gray-400 italic text-sm">Belum ada data peserta terdaftar.</td></tr>`;
-                return;
-            }
-
-            Object.keys(data).forEach((key) => {
-                const p = data[key];
-                const rowId = key;
-                
-                // Menghitung Rata-rata
-                const nilaiMateri = p.materi || [0,0,0,0,0,0,0,0,0,0];
-                const sum = nilaiMateri.reduce((a, b) => Number(a) + Number(b), 0);
-                const avg = (sum / 10).toFixed(1);
-
-                // Warna progress bar
-                let colorClass = "bg-red-500";
-                if(avg >= 60 && avg < 80) colorClass = "bg-yellow-500";
-                if(avg >= 80) colorClass = "bg-green-500";
-
-                // Generate Input Nilai
-                let inputsHtml = '';
-                nilaiMateri.forEach((nilai, idx) => {
-                    inputsHtml += `
-                        <div class="flex flex-col items-center">
-                            <span class="text-[9px] font-bold text-gray-400 mb-1">M${idx+1}</span>
-                            <input type="number" value="${nilai}" 
-                                onchange="updateNilaiFirebase('${rowId}', ${idx}, this.value)"
-                                class="w-10 h-8 border border-gray-200 rounded text-center text-xs font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                                min="0" max="100">
-                        </div>`;
-                });
-
-                const tr = document.createElement('tr');
-                tr.className = "participant-row hover:bg-slate-50 transition duration-150";
-                tr.setAttribute('data-month', p.bulan);
-
-                tr.innerHTML = `
-                    <td class="p-5">
-                        <div class="font-bold text-slate-800">${p.name}</div>
-                        <div class="text-[10px] text-gray-500 uppercase font-medium tracking-tighter">${p.posisi} | <span class="text-blue-600 font-bold">${p.bulanTeks}</span></div>
-                    </td>
-                    <td class="p-5">
-                        <div class="flex justify-center gap-1.5">
-                            ${inputsHtml}
-                        </div>
-                    </td>
-                    <td class="p-5">
-                        <div class="flex justify-between items-end mb-1">
-                            <span class="text-xs font-black text-slate-700">${avg}%</span>
-                            <span class="text-[10px] font-bold ${avg >= 80 ? 'text-green-600' : 'text-gray-400'} uppercase">
-                                ${avg >= 80 ? '<i class="fas fa-check-circle"></i> Lulus' : 'Belajar'}
-                            </span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2 border border-gray-200 overflow-hidden">
-                            <div class="${colorClass} h-full transition-all duration-700 ease-out" style="width: ${avg}%"></div>
-                        </div>
-                    </td>
-                    <td class="p-5 text-center">
-                        <button onclick="hapusPeserta('${rowId}')" class="text-gray-300 hover:text-red-500 transition duration-200 p-2">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </td>
-                `;
-                table.appendChild(tr);
-            });
-            filterData();
-        });
-
-        // Update Nilai ke Firebase
-        window.updateNilaiFirebase = function(rowId, index, nilai) {
-            let val = Number(nilai);
-            if (val > 100) val = 100;
-            if (val < 0) val = 0;
+        function initChart(dataKey) {
+            const ctx = document.getElementById('passingChart').getContext('2d');
             
-            const specificMateriRef = ref(db, `peserta/${rowId}/materi/${index}`);
-            set(specificMateriRef, val);
-        }
-
-        // Hapus Peserta
-        window.hapusPeserta = function(id) {
-            if(confirm("Apakah Anda yakin ingin menghapus data peserta ini dari database?")) {
-                remove(ref(db, `peserta/${id}`));
+            if (myChart) {
+                myChart.destroy();
             }
-        }
 
-        // Filter Sederhana
-        window.filterData = function() {
-            const selectedMonth = document.getElementById('filterMonth').value;
-            const rows = document.querySelectorAll('.participant-row');
-            rows.forEach(row => {
-                const rowMonth = row.getAttribute('data-month');
-                if (selectedMonth === 'all' || rowMonth === selectedMonth) {
-                    row.style.display = "";
-                } else {
-                    row.style.display = "none";
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Lulus', 'Gagal', 'Proses'],
+                    datasets: [{
+                        data: chartData[dataKey],
+                        backgroundColor: ['#3b82f6', '#fb923c', '#d1d5db'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false
                 }
             });
+
+            // Update Ringkasan Teks
+            document.getElementById('summaryTotal').innerText = summaryData[dataKey].total;
+            document.getElementById('summaryTraining').innerText = summaryData[dataKey].training;
+            document.getElementById('summaryCompleted').innerText = summaryData[dataKey].completed;
         }
+
+        // Event listener saat bulan berubah
+        document.getElementById('monthSelect').addEventListener('change', (e) => {
+            initChart(e.target.value);
+        });
+
+        // Jalankan saat pertama kali load
+        window.onload = () => {
+            initChart('oct');
+        };
     </script>
 </body>
 </html>
