@@ -3,500 +3,679 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Training Tracker - HRTVerse Cloud</title>
+    <title>SDP Live Connect - Sales & HR Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.1); }
-        .sidebar-active { background-color: rgba(255, 255, 255, 0.15); border-left: 4px solid #3b82f6; }
-        canvas { max-width: 100% !important; height: auto !important; }
-        .loading-overlay { background: rgba(255,255,255,0.7); z-index: 1000; }
-        .stats-card { transition: transform 0.2s; }
-        .stats-card:hover { transform: translateY(-2px); }
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --accent: #f43f5e;
+            --surface: #ffffff;
+            --bg-main: #fcfdfe;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg-main);
+            color: #1e293b;
+            overflow-x: hidden;
+            letter-spacing: -0.01em;
+        }
+
+        /* Glassmorphism Core */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
+        }
+
+        .premium-card {
+            background: #ffffff;
+            border-radius: 24px;
+            border: 1px solid #f1f5f9;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .premium-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.06);
+            border-color: rgba(79, 70, 229, 0.15);
+        }
+
+        .sidebar-item {
+            @apply flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all duration-300 text-slate-500 hover:text-indigo-600 font-medium mx-3 mb-1 cursor-pointer;
+        }
+
+        .sidebar-item-active {
+            @apply text-white font-semibold;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        }
+
+        .status-badge {
+            @apply px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5;
+        }
+
+        .page-content { display: none; opacity: 0; transform: translateY(10px); transition: all 0.5s ease; }
+        .page-content.active { display: block; opacity: 1; transform: translateY(0); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 20px; }
+        
+        @keyframes subtle-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+        .pulse-soft { animation: subtle-pulse 2s infinite; }
+
+        aside { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-collapsed { width: 96px !important; }
+        .sidebar-collapsed .nav-text, 
+        .sidebar-collapsed .branding-text,
+        .sidebar-collapsed .info-box,
+        .sidebar-collapsed .nav-header { display: none; }
+        .sidebar-collapsed .sidebar-item { justify-content: center; width: 52px; margin-left: auto; margin-right: auto; padding-left: 0; padding-right: 0; }
+
+        .search-container input:focus {
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
+        }
+
+        /* Abstract Background Elements */
+        .blob {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(79, 70, 229, 0.05) 0%, rgba(255, 255, 255, 0) 70%);
+            border-radius: 50%;
+            z-index: -1;
+            pointer-events: none;
+        }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex">
+<body class="antialiased">
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 loading-overlay flex items-center justify-center hidden">
-        <div class="flex flex-col items-center">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-2"></div>
-            <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Sinkronisasi Cloud...</p>
-        </div>
-    </div>
+    <!-- Background Decoration -->
+    <div class="blob" style="top: -100px; right: -100px;"></div>
+    <div class="blob" style="bottom: -100px; left: -100px;"></div>
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-[#1e293b] text-white flex flex-col hidden md:flex shrink-0">
-        <div class="p-6 flex items-center space-x-3">
-            <div class="bg-blue-500 p-2 rounded-lg">
-                <i class="fas fa-chart-line text-white text-xl"></i>
-            </div>
-            <h1 class="font-bold text-lg leading-tight uppercase tracking-wider">SDP Training<br>Dashboard</h1>
-        </div>
-
-        <nav class="flex-1 mt-6">
-            <a href="#" class="sidebar-active flex items-center px-6 py-3 text-white">
-                <i class="fas fa-th-large w-6 text-blue-400"></i>
-                <span class="text-sm font-semibold uppercase">Overview</span>
-            </a>
-            <a href="#" class="sidebar-item flex items-center px-6 py-3 text-gray-400 hover:text-white transition-all">
-                <i class="fas fa-users w-6"></i>
-                <span class="text-sm font-semibold uppercase">Trainees</span>
-            </a>
-            
-            <div class="px-6 py-2 text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-8">Sistem Status</div>
-            <div id="authStatus" class="px-6 py-2 flex items-center text-xs text-yellow-500">
-                <i class="fas fa-circle-notch fa-spin mr-2"></i> Menghubungkan...
-            </div>
-        </nav>
-
-        <div class="p-6 border-t border-gray-700">
-            <button onclick="location.reload()" class="flex items-center text-gray-400 hover:text-white transition-colors w-full">
-                <i class="fas fa-sync-alt w-6"></i>
-                <span>Muat Ulang</span>
+    <div class="min-h-screen flex flex-col lg:flex-row relative">
+        <!-- Sidebar -->
+        <aside id="mainSidebar" class="w-full lg:w-72 bg-white/70 border-r border-slate-100 flex flex-col z-30 relative glass-panel">
+            <button onclick="toggleSidebar()" class="hidden lg:flex absolute -right-3 top-12 bg-white border border-slate-100 rounded-full p-1.5 shadow-md hover:scale-110 z-50 transition-all text-slate-400 hover:text-indigo-600">
+                <svg id="toggleIcon" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 19l-7-7 7-7"/></svg>
             </button>
-        </div>
-    </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden">
-        <header class="bg-white h-16 flex items-center justify-between px-8 border-b border-gray-200 shrink-0">
-            <div class="text-sm font-medium text-gray-500">
-                Node ID: <span id="displayUserId" class="text-gray-800 font-mono text-[10px]">Memuat...</span>
-            </div>
-            <div class="flex items-center space-x-4">
-                <div class="hidden md:block text-right">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Authorized Admin</p>
-                    <p class="text-sm font-bold text-gray-800">Coach Prast</p>
+            <div class="p-8">
+                <!-- Brand -->
+                <div class="flex items-center gap-4 mb-12 px-2">
+                    <div class="flex-shrink-0 flex items-center justify-center w-11 h-11 bg-indigo-600 rounded-[18px] shadow-lg shadow-indigo-100">
+                        <svg viewBox="0 0 24 24" fill="none" class="w-6 h-6 text-white" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 4L4 8L12 12L20 8L12 4Z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M4 12L12 16L20 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M4 16L12 20L20 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="branding-text">
+                        <h1 class="font-extrabold text-lg tracking-tight text-slate-900 leading-tight">SDP Connect</h1>
+                        <span class="text-[9px] text-indigo-500 font-black uppercase tracking-[0.2em] block">Sales & HR ecosystem</span>
+                    </div>
                 </div>
-                <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-md">
-                    CP
-                </div>
-            </div>
-        </header>
 
-        <div class="flex-1 overflow-y-auto p-6 md:p-8 bg-gray-50">
+                <nav class="space-y-1">
+                    <div class="nav-header py-4 px-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">Menu Utama</div>
+                    
+                    <div onclick="switchPage('dashboard', this)" class="sidebar-item sidebar-item-active" id="nav-dashboard" title="Dashboard">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
+                        <span class="nav-text text-sm">Beranda</span>
+                    </div>
+
+                    <div onclick="switchPage('booking', this)" class="sidebar-item" id="nav-booking" title="Sales Booking">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                        <span class="nav-text text-sm">Booking Sales</span>
+                    </div>
+
+                    <div class="info-box mt-10 p-5 bg-indigo-50/50 rounded-3xl border border-indigo-100/30 mx-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div id="statusIndicator" class="w-2 h-2 rounded-full bg-slate-300"></div>
+                            <span id="statusLabel" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Memulai</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 font-medium leading-relaxed">Data diperbarui secara real-time dari server pusat.</p>
+                    </div>
+                </nav>
+            </div>
             
-            <!-- Real-time Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 stats-card">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Peserta</p>
-                            <h3 id="cardTotalTrainees" class="text-3xl font-black text-gray-800">0</h3>
+            <div class="mt-auto p-6 info-box">
+                <div class="bg-indigo-950 rounded-[28px] p-6 text-white shadow-xl shadow-indigo-100 relative overflow-hidden">
+                    <div class="relative z-10">
+                        <p class="text-[9px] text-indigo-300 uppercase font-black tracking-[0.25em] mb-4">Waktu Update</p>
+                        <div class="flex items-center justify-between">
+                            <span id="loadTimeText" class="text-xl font-bold tracking-tight">--:--</span>
+                            <div class="flex gap-1 items-end h-4">
+                                <div class="w-1 bg-indigo-400 rounded-full animate-pulse h-2"></div>
+                                <div class="w-1 bg-indigo-400 rounded-full animate-pulse h-4" style="animation-delay: 0.2s"></div>
+                                <div class="w-1 bg-indigo-400 rounded-full animate-pulse h-3" style="animation-delay: 0.4s"></div>
+                            </div>
                         </div>
-                        <div class="bg-blue-50 p-3 rounded-xl text-blue-600"><i class="fas fa-users text-xl"></i></div>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 stats-card">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Lulus (Graduated)</p>
-                            <h3 id="cardGraduated" class="text-3xl font-black text-gray-800">0</h3>
+                        <div class="w-full bg-white/10 h-1 rounded-full overflow-hidden mt-5">
+                            <div id="syncProgress" class="bg-indigo-400 h-full w-0 transition-all duration-700"></div>
                         </div>
-                        <div class="bg-green-50 p-3 rounded-xl text-green-600"><i class="fas fa-check-circle text-xl"></i></div>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500 stats-card">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Sedang Proses</p>
-                            <h3 id="cardInProgress" class="text-3xl font-black text-gray-800">0</h3>
-                        </div>
-                        <div class="bg-orange-50 p-3 rounded-xl text-orange-600"><i class="fas fa-clock text-xl"></i></div>
                     </div>
                 </div>
             </div>
+        </aside>
 
-            <div class="flex flex-col lg:flex-row gap-8">
-                <!-- Table Section -->
-                <div class="lg:w-3/4">
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Main Content -->
+        <main class="flex-grow overflow-y-auto max-h-screen scroll-smooth relative z-10">
+            <header class="sticky top-0 z-20 px-6 lg:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-6 glass-panel border-0 border-b">
+                <div>
+                    <h2 id="pageTitle" class="text-2xl font-extrabold text-slate-900 tracking-tight">Ringkasan Data</h2>
+                    <p id="pageSubTitle" class="text-xs text-slate-400 font-medium mt-1">Pantau performa dan ketersediaan sumber daya manusia.</p>
+                </div>
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <div class="relative flex-grow search-container">
+                        <input type="text" id="tableSearch" placeholder="Cari data..." class="w-full md:w-72 pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm focus:ring-0 focus:border-indigo-400 transition-all outline-none text-slate-600">
+                        <svg class="w-4 h-4 text-slate-300 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                    <button onclick="fetchDataFromAPI()" id="refreshBtn" class="bg-white border border-slate-100 hover:border-indigo-500 hover:text-indigo-600 text-slate-400 p-3 rounded-2xl transition-all shadow-sm active:scale-95 disabled:opacity-50">
+                        <svg id="refreshIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Page: DASHBOARD -->
+            <div id="page-dashboard" class="page-content active p-6 lg:p-12 space-y-10">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Total -->
+                    <div class="premium-card p-8 group">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="p-3 bg-indigo-50 rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Database</span>
+                        </div>
+                        <p class="text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mb-1">Total Peserta</p>
+                        <div class="flex items-baseline gap-2">
+                            <span id="val-total" class="text-5xl font-black text-slate-900 tracking-tighter">-</span>
+                            <span class="text-xs font-bold text-slate-400">Jiwa</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Aktif -->
+                    <div class="premium-card p-8 border-b-4 border-emerald-500 group">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="p-3 bg-emerald-50 rounded-2xl text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <div class="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-wider">
+                                <span class="w-1 h-1 bg-emerald-500 rounded-full pulse-soft"></span> LIVE
+                            </div>
+                        </div>
+                        <p class="text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mb-1">Status Aktif</p>
+                        <div class="flex items-baseline gap-2">
+                            <span id="val-active" class="text-5xl font-black text-emerald-600 tracking-tighter">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Resign -->
+                    <div class="premium-card p-8 border-b-4 border-rose-500 group">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="p-3 bg-rose-50 rounded-2xl text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Alumni</span>
+                        </div>
+                        <p class="text-slate-400 text-[10px] font-extrabold uppercase tracking-widest mb-1">Mundur / Resign</p>
+                        <div class="flex items-baseline gap-2">
+                            <span id="val-resign" class="text-5xl font-black text-rose-600 tracking-tighter">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <!-- Table Section -->
+                    <div class="lg:col-span-8 premium-card overflow-hidden flex flex-col border-0 shadow-sm">
+                        <div class="p-8 border-b border-slate-50 flex justify-between items-center bg-white">
                             <div>
-                                <h2 class="text-xl font-black text-gray-800 uppercase tracking-tight">Data Manajemen Trainee</h2>
-                                <p class="text-xs text-gray-500">Pantau progres Sales Development Program secara real-time</p>
+                                <h3 class="font-extrabold text-slate-900">Log Kehadiran & Status</h3>
+                                <p class="text-[10px] text-slate-400 font-medium mt-0.5">Menampilkan 15 entri data terbaru.</p>
                             </div>
-                            <button onclick="openModal()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition flex items-center shadow-lg shadow-blue-200 text-sm">
-                                <i class="fas fa-plus-circle mr-2"></i> Tambah Trainee
-                            </button>
+                            <button class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Export Excel</button>
                         </div>
-
-                        <!-- Search and Filter -->
-                        <div class="px-6 py-4 bg-gray-50 border-y border-gray-100 flex flex-wrap items-center gap-4">
-                            <div class="relative flex-1 min-w-[250px]">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                    <i class="fas fa-search"></i>
-                                </span>
-                                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari Nama, Supervisor, atau Wilayah..." class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm">
-                            </div>
-                            
-                            <button onclick="exportToCSV()" class="flex items-center bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 transition">
-                                <i class="fas fa-download mr-2"></i> Export CSV
-                            </button>
-                        </div>
-
-                        <!-- Table -->
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left" id="traineeTable">
-                                <thead>
-                                    <tr class="bg-gray-50 text-gray-400 text-[10px] uppercase font-black tracking-[0.1em]">
-                                        <th class="px-6 py-4">Informasi Trainee</th>
-                                        <th class="px-6 py-4">Supervisor</th>
-                                        <th class="px-6 py-4">Wilayah</th>
-                                        <th class="px-6 py-4 text-center">Status</th>
-                                        <th class="px-6 py-4 text-center">Aksi</th>
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-50/40 text-slate-400 font-black text-[9px] uppercase tracking-[0.2em] border-b border-slate-50">
+                                    <tr>
+                                        <th class="px-8 py-5">Peserta</th>
+                                        <th class="px-6 py-5">Area Penugasan</th>
+                                        <th class="px-8 py-5 text-right">Label Status</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-100" id="tableBody">
-                                    <tr>
-                                        <td colspan="5" class="px-6 py-10 text-center text-gray-400 italic">
-                                            <i class="fas fa-circle-notch fa-spin mr-2"></i> Mengambil data dari cloud...
-                                        </td>
-                                    </tr>
+                                <tbody id="mainTableBody" class="divide-y divide-slate-50">
+                                    <!-- Dynamic rows -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                </div>
 
-                <!-- Widgets Section -->
-                <div class="lg:w-1/4 space-y-6">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                        <h3 class="font-black text-gray-800 mb-6 border-b pb-2 uppercase tracking-tight text-xs">Visual Progres</h3>
-                        <div class="relative h-48">
-                            <canvas id="passingChart"></canvas>
+                    <!-- Chart Section -->
+                    <div class="lg:col-span-4 space-y-8">
+                        <div class="premium-card p-10 flex flex-col items-center">
+                            <h3 class="font-bold text-slate-900 mb-8 text-sm uppercase tracking-widest">Proporsi Status</h3>
+                            <div class="relative w-full aspect-square max-w-[240px]">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                            <div id="chartLegend" class="mt-10 w-full space-y-3"></div>
                         </div>
-                    </div>
 
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                        <h3 class="font-black text-gray-800 mb-4 border-b pb-2 uppercase tracking-tight text-xs">KPI Summary</h3>
-                        <div class="space-y-4">
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-500 text-sm font-medium">Retention Rate</span>
-                                <span id="summaryRate" class="text-lg font-black text-emerald-600">0%</span>
-                            </div>
-                            <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                                <div id="summaryProgress" class="bg-emerald-500 h-full" style="width: 0%"></div>
-                            </div>
+                        <!-- Special Alert -->
+                        <div class="bg-indigo-600 rounded-[32px] p-8 text-white shadow-2xl shadow-indigo-200 relative overflow-hidden group">
+                            <div class="absolute -right-4 -top-4 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-700"></div>
+                            <h4 class="font-extrabold text-lg mb-3">Sistem Cerdas</h4>
+                            <p class="text-indigo-100 text-[11px] leading-relaxed opacity-80">Data "Onboarding" secara otomatis disaring keluar dari kalkulasi dashboard untuk menjaga validitas angka real-time.</p>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
 
-    <!-- Modal Form -->
-    <div id="traineeModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-gray-100">
-            <div class="bg-blue-600 px-6 py-5 flex justify-between items-center">
-                <div>
-                    <h3 id="modalTitle" class="text-white font-black uppercase tracking-tight">Input Data Trainee</h3>
-                    <p class="text-[10px] text-blue-100 font-bold uppercase tracking-widest">Formulir Pendaftaran Cloud</p>
-                </div>
-                <button onclick="closeModal()" class="text-white hover:bg-white/20 w-8 h-8 rounded-full transition">&times;</button>
-            </div>
-            <form id="traineeForm" class="p-6 space-y-4">
-                <input type="hidden" id="editDocId">
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Nama Lengkap</label>
-                    <input type="text" id="formName" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Supervisor</label>
-                        <input type="text" id="formSup" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Wilayah</label>
-                        <input type="text" id="formRegion" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Nomor Telepon (WhatsApp)</label>
-                    <input type="text" id="formPhone" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Status Pelatihan</label>
-                    <select id="formStatus" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition font-bold text-gray-700">
-                        <option value="Completed">Lulus / Selesai</option>
-                        <option value="In Progress">Dalam Proses</option>
-                        <option value="Failed">Gagal / Drop Out</option>
-                    </select>
-                </div>
-                <div class="pt-4 flex space-x-3">
-                    <button type="button" onclick="closeModal()" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-gray-500 font-bold hover:bg-gray-50 transition text-sm uppercase">Batal</button>
-                    <button type="submit" id="submitBtn" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-xl shadow-blue-200 transition text-sm uppercase tracking-widest">Simpan Data</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-8 right-8 z-[200] hidden transform transition-all duration-300 translate-y-20 bg-gray-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center border border-gray-700">
-        <div class="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse"></div>
-        <span id="toastMsg" class="text-sm font-bold uppercase tracking-tight"></span>
-    </div>
-
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global Variable Handling
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-sales-app';
-        
-        let trainees = [];
-        let myChart;
-        let currentUser = null;
-
-        const updateStatus = (text, colorClass) => {
-            const el = document.getElementById('authStatus');
-            if (el) el.innerHTML = `<i class="fas fa-circle ${colorClass} mr-2"></i> ${text}`;
-        };
-
-        // --- AUTH LOGIC ---
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (err) {
-                console.error("AUTH ERROR:", err);
-                updateStatus('Cloud Error', 'text-red-500');
-            }
-        };
-
-        initAuth();
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                updateStatus('Cloud Aktif', 'text-emerald-500');
-                document.getElementById('displayUserId').innerText = user.uid;
-                loadData();
-            } else {
-                updateStatus('Menghubungkan...', 'text-yellow-500');
-            }
-        });
-
-        // --- DATA LOGIC ---
-        function loadData() {
-            if (!currentUser) return;
-            const traineesCol = collection(db, 'artifacts', appId, 'public', 'data', 'trainees');
-            
-            onSnapshot(traineesCol, (snapshot) => {
-                trainees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderTable(trainees);
-                updateDashboardUI();
-            }, (error) => {
-                console.error("FIRESTORE ERROR:", error);
-                showToast("Izin Firestore Ditolak!");
-            });
-        }
-
-        // Simpan / Edit
-        document.getElementById('traineeForm').onsubmit = async (e) => {
-            e.preventDefault();
-            if (!currentUser) return showToast("Tidak ada koneksi.");
-            
-            const docId = document.getElementById('editDocId').value;
-            const data = {
-                name: document.getElementById('formName').value,
-                supervisor: document.getElementById('formSup').value,
-                region: document.getElementById('formRegion').value,
-                phone: document.getElementById('formPhone').value,
-                status: document.getElementById('formStatus').value,
-                updatedAt: new Date().toISOString()
-            };
-
-            setLoading(true);
-            try {
-                if (docId) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trainees', docId), data);
-                    showToast("Update Berhasil");
-                } else {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'trainees'), { 
-                        ...data, 
-                        createdAt: new Date().toISOString()
-                    });
-                    showToast("Trainee Berhasil Ditambah");
-                }
-                closeModal();
-            } catch (err) {
-                showToast("Gagal menyimpan!");
-            }
-            setLoading(false);
-        };
-
-        // Hapus
-        window.deleteTrainee = async (docId) => {
-            const confirmed = window.confirm("Hapus data ini secara permanen dari Cloud?");
-            if (!confirmed) return;
-            
-            setLoading(true);
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trainees', docId));
-                showToast("Data Terhapus");
-            } catch (err) {
-                showToast("Gagal menghapus");
-            }
-            setLoading(false);
-        };
-
-        // --- UI RENDERING ---
-        function renderTable(data) {
-            const tbody = document.getElementById('tableBody');
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-gray-400 italic">Belum ada data trainee di database cloud ini.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = data.map((item) => `
-                <tr class="hover:bg-blue-50/50 transition-all border-b border-gray-100 group">
-                    <td class="px-6 py-5">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-100 to-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs shadow-sm">
-                                ${item.name.charAt(0)}
+            <!-- Page: BOOKING SALES -->
+            <div id="page-booking" class="page-content p-6 lg:p-12 space-y-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Progress Card -->
+                    <div class="premium-card p-8 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white border-0">
+                        <h3 class="text-sm font-black uppercase tracking-[0.2em] text-indigo-200 mb-8">Pencapaian Bulan Ini</h3>
+                        <div class="flex justify-between items-end mb-4">
+                            <div>
+                                <p class="text-4xl font-black tracking-tighter">Rp 2.45M</p>
+                                <p class="text-[10px] font-bold text-indigo-200 mt-1 uppercase tracking-widest">Realisasi Booking</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xl font-bold">82%</p>
+                                <p class="text-[10px] font-bold text-indigo-200 mt-1 uppercase tracking-widest">Dari Target</p>
+                            </div>
+                        </div>
+                        <div class="w-full bg-indigo-900/40 h-3 rounded-full overflow-hidden mb-6">
+                            <div class="bg-white h-full w-[82%] rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)]"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 border-t border-indigo-400/20 pt-6">
+                            <div>
+                                <p class="text-[9px] font-black text-indigo-300 uppercase mb-1">Target</p>
+                                <p class="font-bold">Rp 3.00M</p>
                             </div>
                             <div>
-                                <p class="font-bold text-gray-800 text-sm leading-tight">${item.name}</p>
-                                <p class="text-[10px] text-gray-400 font-mono">${item.phone}</p>
+                                <p class="text-[9px] font-black text-indigo-300 uppercase mb-1">Sisa Hari</p>
+                                <p class="font-bold">12 Hari</p>
                             </div>
                         </div>
-                    </td>
-                    <td class="px-6 py-5 text-sm font-semibold text-gray-600">${item.supervisor}</td>
-                    <td class="px-6 py-5">
-                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md font-bold">${item.region}</span>
-                    </td>
-                    <td class="px-6 py-5 text-center">
-                        <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${getStatusStyle(item.status)}">${item.status}</span>
-                    </td>
-                    <td class="px-6 py-5">
-                        <div class="flex justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="editTrainee('${item.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center"><i class="far fa-edit text-xs"></i></button>
-                            <button onclick="deleteTrainee('${item.id}')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center"><i class="far fa-trash-alt text-xs"></i></button>
+                    </div>
+
+                    <!-- Market Insights -->
+                    <div class="premium-card p-8">
+                        <h3 class="text-sm font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Top Regional Sales</h3>
+                        <div class="space-y-5">
+                            <div class="flex items-center gap-4">
+                                <div class="w-2 h-8 bg-indigo-500 rounded-full"></div>
+                                <div class="flex-grow">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-xs font-bold text-slate-700">Jakarta Area</span>
+                                        <span class="text-xs font-bold text-indigo-600">Rp 1.1B</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-1.5 rounded-full"><div class="bg-indigo-500 h-full w-[90%] rounded-full"></div></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-2 h-8 bg-emerald-500 rounded-full"></div>
+                                <div class="flex-grow">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-xs font-bold text-slate-700">Surabaya Area</span>
+                                        <span class="text-xs font-bold text-emerald-600">Rp 850M</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-1.5 rounded-full"><div class="bg-emerald-500 h-full w-[65%] rounded-full"></div></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-2 h-8 bg-amber-500 rounded-full"></div>
+                                <div class="flex-grow">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-xs font-bold text-slate-700">Medan Area</span>
+                                        <span class="text-xs font-bold text-amber-600">Rp 500M</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-1.5 rounded-full"><div class="bg-amber-500 h-full w-[40%] rounded-full"></div></div>
+                                </div>
+                            </div>
                         </div>
-                    </td>
-                </tr>
-            `).join('');
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="premium-card overflow-hidden">
+                    <div class="p-8 border-b border-slate-50 flex justify-between items-center">
+                        <div>
+                            <h3 class="font-extrabold text-slate-900 uppercase text-xs tracking-widest">Data Booking Terbaru</h3>
+                            <p class="text-[10px] text-slate-400 font-medium mt-1">Verifikasi status pembayaran dan kontrak.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="p-2 border border-slate-100 rounded-lg hover:bg-slate-50"><svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg></button>
+                            <button class="p-2 border border-slate-100 rounded-lg hover:bg-slate-50"><svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50/40 text-slate-400 font-black text-[9px] uppercase tracking-[0.2em] border-b border-slate-50">
+                                <tr>
+                                    <th class="px-8 py-4">Sales Agent</th>
+                                    <th class="px-6 py-4">Customer</th>
+                                    <th class="px-6 py-4">Nilai Booking</th>
+                                    <th class="px-8 py-4 text-right">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50">
+                                <tr class="hover:bg-slate-50/50 transition-all">
+                                    <td class="px-8 py-5">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-600 text-[10px]">AN</div>
+                                            <span class="text-sm font-bold text-slate-700">Andini Nurhaliza</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-5 text-sm text-slate-600">PT Maju Mundur Sejahtera</td>
+                                    <td class="px-6 py-5 text-sm font-bold text-slate-900">Rp 125.000.000</td>
+                                    <td class="px-8 py-5 text-right"><span class="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-wider">Confirmed</span></td>
+                                </tr>
+                                <tr class="hover:bg-slate-50/50 transition-all">
+                                    <td class="px-8 py-5">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-600 text-[10px]">BP</div>
+                                            <span class="text-sm font-bold text-slate-700">Budi Pratama</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-5 text-sm text-slate-600">Koperasi Karya Mandiri</td>
+                                    <td class="px-6 py-5 text-sm font-bold text-slate-900">Rp 42.500.000</td>
+                                    <td class="px-8 py-5 text-right"><span class="px-2.5 py-1 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase tracking-wider">Pending</span></td>
+                                </tr>
+                                <tr class="hover:bg-slate-50/50 transition-all">
+                                    <td class="px-8 py-5">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center font-bold text-amber-600 text-[10px]">RM</div>
+                                            <span class="text-sm font-bold text-slate-700">Rina Maryana</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-5 text-sm text-slate-600">Yayasan Pendidikan Global</td>
+                                    <td class="px-6 py-5 text-sm font-bold text-slate-900">Rp 310.000.000</td>
+                                    <td class="px-8 py-5 text-right"><span class="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-wider">Processing</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const ENDPOINT = 'https://script.google.com/macros/s/AKfycbxbBSfLJQUsNK85g2_eB8BrD-iFN_TukMKMmI6sM7PfXiU4OuuwlTQqZ6XXv9YlFM5D/exec';
+        let store = [];
+        let myChart = null;
+        let isSidebarCollapsed = false;
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const toggleIcon = document.getElementById('toggleIcon');
+            isSidebarCollapsed = !isSidebarCollapsed;
+            
+            if (isSidebarCollapsed) {
+                sidebar.classList.add('sidebar-collapsed');
+                toggleIcon.style.transform = 'rotate(180deg)';
+            } else {
+                sidebar.classList.remove('sidebar-collapsed');
+                toggleIcon.style.transform = 'rotate(0deg)';
+            }
+            if (myChart) setTimeout(() => myChart.resize(), 405);
         }
 
-        function updateDashboardUI() {
-            const total = trainees.length;
-            const completed = trainees.filter(t => t.status === 'Completed').length;
-            const inProgress = trainees.filter(t => t.status === 'In Progress').length;
-            const failed = trainees.filter(t => t.status === 'Failed').length;
+        function switchPage(pageId, element) {
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('sidebar-item-active'));
+            element.classList.add('sidebar-item-active');
 
-            // Update Cards
-            document.getElementById('cardTotalTrainees').innerText = total;
-            document.getElementById('cardGraduated').innerText = completed;
-            document.getElementById('cardInProgress').innerText = inProgress;
+            document.querySelectorAll('.page-content').forEach(page => page.classList.remove('active'));
+            const target = document.getElementById(`page-${pageId}`);
+            target.classList.add('active');
 
-            // Update KPI
-            const rate = total > 0 ? Math.round((completed/total)*100) : 0;
-            document.getElementById('summaryRate').innerText = `${rate}%`;
-            document.getElementById('summaryProgress').style.width = `${rate}%`;
+            const titleMap = {
+                'dashboard': { t: 'Ringkasan Data', s: 'Pantau performa dan ketersediaan sumber daya manusia.' },
+                'booking': { t: 'Pencapaian Booking Sales', s: 'Manajemen target, realisasi, dan transaksi penjualan.' }
+            };
+            document.getElementById('pageTitle').innerText = titleMap[pageId].t;
+            document.getElementById('pageSubTitle').innerText = titleMap[pageId].s;
+        }
 
-            // Update Doughnut Chart
-            const ctx = document.getElementById('passingChart').getContext('2d');
+        const centerTextPlugin = {
+            id: 'centerText',
+            afterDraw: (chart) => {
+                const { ctx, chartArea: { top, bottom, left, right, width, height } } = chart;
+                ctx.save();
+                const data = chart.data.datasets[0].data;
+                const total = data.reduce((a, b) => a + b, 0);
+                const activeVal = data[0] || 0;
+                const percentage = total > 0 ? Math.round((activeVal / total) * 100) : 0;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '800 32px "Plus Jakarta Sans"';
+                ctx.fillStyle = '#1e293b';
+                ctx.fillText(`${percentage}%`, width / 2 + left, height / 2 + top - 4);
+                ctx.font = 'bold 10px "Plus Jakarta Sans"';
+                ctx.fillStyle = '#94a3b8';
+                ctx.letterSpacing = "2px";
+                ctx.fillText('AKTIF', width / 2 + left, height / 2 + top + 26);
+                ctx.restore();
+            }
+        };
+        Chart.register(centerTextPlugin);
+
+        function findValue(obj, keys) {
+            const rowKeys = Object.keys(obj);
+            for (let key of keys) {
+                const match = rowKeys.find(k => k.toLowerCase().replace(/\s/g, '') === key.toLowerCase().replace(/\s/g, ''));
+                if (match) return obj[match];
+            }
+            return null;
+        }
+
+        async function fetchDataFromAPI() {
+            toggleLoading(true);
+            updateIndicator('loading');
+            try {
+                const response = await fetch(ENDPOINT);
+                const rawData = await response.json();
+                const items = Array.isArray(rawData) ? rawData : (rawData.records || rawData.data || []);
+                const cleanedData = items.map(item => ({
+                    nama: findValue(item, ['Nama', 'NamaLengkap', 'Username', 'Name', 'Peserta']),
+                    lokasi: findValue(item, ['Lokasi', 'Cabang', 'Regional', 'Branch', 'City']) || 'Jakarta',
+                    status: findValue(item, ['Status', 'StatusKerja', 'Keterangan', 'Kondisi']) || 'Pending'
+                })).filter(d => {
+                    const validName = d.nama && d.nama.trim() !== "" && !/tanpa nama/i.test(d.nama);
+                    const validStatus = !/on board|onboarding/i.test(String(d.status));
+                    return validName && validStatus;
+                });
+                store = cleanedData;
+                renderDashboard(cleanedData);
+                document.getElementById('loadTimeText').innerText = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('syncProgress').style.width = '100%';
+                updateIndicator('online');
+            } catch (err) {
+                updateIndicator('offline');
+                showErrorState();
+            } finally {
+                setTimeout(() => toggleLoading(false), 500);
+            }
+        }
+
+        function renderDashboard(data) {
+            const total = data.length;
+            const active = data.filter(d => /aktif|assignment|kerja/i.test(String(d.status))).length;
+            const resign = data.filter(d => /resign|mundur|keluar/i.test(String(d.status))).length;
+            
+            animateValue('val-total', total);
+            animateValue('val-active', active);
+            animateValue('val-resign', resign);
+            
+            window.currentData = data;
+            renderTable(data);
+            renderChart(data);
+        }
+
+        function animateValue(id, value) {
+            const obj = document.getElementById(id);
+            let start = 0;
+            const duration = 800;
+            if(value === 0) { obj.innerText = "0"; return; }
+            const stepTime = Math.max(10, Math.floor(duration / value));
+            const timer = setInterval(() => {
+                start++;
+                obj.innerText = start;
+                if (start >= value) {
+                    obj.innerText = value;
+                    clearInterval(timer);
+                }
+            }, stepTime);
+        }
+
+        function renderTable(data) {
+            const body = document.getElementById('mainTableBody');
+            if (data.length === 0) {
+                body.innerHTML = '<tr><td colspan="3" class="p-24 text-center text-slate-400 text-xs italic">Tidak ada data untuk ditampilkan.</td></tr>';
+                return;
+            }
+            body.innerHTML = data.slice(0, 15).map(d => {
+                const isResign = /resign|mundur|keluar/i.test(String(d.status));
+                const badgeClass = isResign ? 'bg-rose-50 text-rose-500' : 'bg-emerald-50 text-emerald-600';
+                const dotClass = isResign ? 'bg-rose-500' : 'bg-emerald-500';
+                const initials = d.nama.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+                
+                return `
+                    <tr class="hover:bg-slate-50/50 transition-all cursor-default group">
+                        <td class="px-8 py-5">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center font-extrabold text-[11px] text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">${initials}</div>
+                                <div>
+                                    <p class="font-bold text-slate-800 text-[14px] leading-none mb-1">${d.nama}</p>
+                                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-[0.15em]">Ref-${Math.floor(1000 + Math.random() * 9000)}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-5">
+                            <span class="text-slate-500 font-semibold text-xs flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                ${d.lokasi}
+                            </span>
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <span class="status-badge ${badgeClass}">
+                                <span class="w-1.5 h-1.5 rounded-full ${dotClass}"></span>
+                                ${d.status}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderChart(data) {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            const counts = {};
+            data.forEach(d => {
+                const s = d.status.charAt(0).toUpperCase() + d.status.slice(1).toLowerCase();
+                counts[s] = (counts[s] || 0) + 1;
+            });
+            const labels = Object.keys(counts);
+            const values = Object.values(counts);
+            const colors = ['#4f46e5', '#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#ec4899'];
+            
             if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Graduated', 'Failed', 'Processing'],
+                    labels: labels,
                     datasets: [{
-                        data: [completed, failed, inProgress],
-                        backgroundColor: ['#3b82f6', '#ef4444', '#f59e0b'],
+                        data: values,
+                        backgroundColor: colors,
                         borderWidth: 0,
-                        hoverOffset: 4
+                        hoverOffset: 15,
+                        borderRadius: 8
                     }]
                 },
-                options: { 
-                    cutout: '80%', 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } } 
+                options: {
+                    cutout: '80%',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { animateScale: true, animateRotate: true },
+                    plugins: { legend: { display: false } }
                 }
             });
+
+            const legendDiv = document.getElementById('chartLegend');
+            legendDiv.innerHTML = labels.map((label, i) => `
+                <div class="flex justify-between items-center bg-slate-50/50 p-4 rounded-2xl hover:bg-white transition-all border border-transparent hover:border-slate-100 group">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2.5 h-2.5 rounded-full" style="background-color: ${colors[i % colors.length]}"></div>
+                        <span class="text-slate-500 text-[10px] font-black uppercase tracking-widest">${label}</span>
+                    </div>
+                    <span class="text-slate-900 font-black text-xs">${values[i]}</span>
+                </div>
+            `).join('');
         }
 
-        // --- HELPERS ---
-        window.editTrainee = (docId) => {
-            const t = trainees.find(x => x.id === docId);
-            if (!t) return;
-            document.getElementById('editDocId').value = docId;
-            document.getElementById('formName').value = t.name;
-            document.getElementById('formSup').value = t.supervisor;
-            document.getElementById('formRegion').value = t.region;
-            document.getElementById('formPhone').value = t.phone;
-            document.getElementById('formStatus').value = t.status;
-            document.getElementById('modalTitle').innerText = "Update Data Cloud";
-            document.getElementById('traineeModal').classList.remove('hidden');
-        };
+        function toggleLoading(isLoading) {
+            const btn = document.getElementById('refreshBtn');
+            const icon = document.getElementById('refreshIcon');
+            if (isLoading) {
+                btn.disabled = true;
+                icon.classList.add('animate-spin');
+                document.getElementById('syncProgress').style.width = '65%';
+            } else {
+                btn.disabled = false;
+                icon.classList.remove('animate-spin');
+                document.getElementById('syncProgress').style.width = '100%';
+            }
+        }
 
-        window.openModal = () => {
-            document.getElementById('traineeForm').reset();
-            document.getElementById('editDocId').value = "";
-            document.getElementById('modalTitle').innerText = "Tambah Trainee Baru";
-            document.getElementById('traineeModal').classList.remove('hidden');
-        };
+        function updateIndicator(state) {
+            const dot = document.getElementById('statusIndicator');
+            const label = document.getElementById('statusLabel');
+            if (state === 'online') {
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-200';
+                label.innerText = 'Online';
+                label.className = 'text-[9px] font-black text-emerald-600 uppercase tracking-widest';
+            } else if (state === 'loading') {
+                dot.className = 'w-2 h-2 rounded-full bg-amber-400 pulse-soft';
+                label.innerText = 'Sinkron';
+                label.className = 'text-[9px] font-black text-amber-600 uppercase tracking-widest';
+            } else {
+                dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+                label.innerText = 'Offline';
+                label.className = 'text-[9px] font-black text-rose-600 uppercase tracking-widest';
+            }
+        }
 
-        window.closeModal = () => document.getElementById('traineeModal').classList.add('hidden');
+        function showErrorState() {
+            document.getElementById('mainTableBody').innerHTML = '<tr><td colspan="3" class="p-24 text-center"><div class="inline-flex p-4 bg-rose-50 text-rose-500 rounded-3xl mb-4"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div><h4 class="font-extrabold text-slate-800">Koneksi Database Terputus</h4><p class="text-slate-400 text-xs mt-2 mb-8 max-w-xs mx-auto">Kami gagal mengambil data terbaru. Pastikan koneksi internet Anda stabil atau coba lagi nanti.</p><button onclick="fetchDataFromAPI()" class="bg-indigo-600 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:scale-105 transition-all">Hubungkan Ulang</button></td></tr>';
+        }
 
-        window.filterTable = () => {
-            const q = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = trainees.filter(t => 
-                t.name.toLowerCase().includes(q) || 
-                t.supervisor.toLowerCase().includes(q) || 
-                t.region.toLowerCase().includes(q)
-            );
+        document.getElementById('tableSearch').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            if (!window.currentData) return;
+            const filtered = window.currentData.filter(d => d.nama.toLowerCase().includes(term));
             renderTable(filtered);
-        };
+        });
 
-        window.exportToCSV = () => {
-            if (trainees.length === 0) return showToast("Database kosong");
-            const headers = ["Nama", "Supervisor", "Wilayah", "Telepon", "Status"];
-            const rows = trainees.map(t => [`"${t.name}"`, `"${t.supervisor}"`, `"${t.region}"`, `"${t.phone}"`, `"${t.status}"`]);
-            const csvContent = "\uFEFF" + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `SDP_Report_${new Date().toLocaleDateString()}.csv`;
-            link.click();
-            showToast("CSV Diunduh");
-        };
-
-        function getStatusStyle(s) {
-            if (s === 'Completed') return "bg-emerald-100 text-emerald-700";
-            if (s === 'Failed') return "bg-red-100 text-red-700";
-            return "bg-amber-100 text-amber-700";
-        }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            document.getElementById('toastMsg').innerText = msg;
-            t.classList.remove('hidden', 'translate-y-20');
-            setTimeout(() => {
-                t.classList.add('translate-y-20');
-                setTimeout(() => t.classList.add('hidden'), 300);
-            }, 3000);
-        }
-
-        function setLoading(val) {
-            const loader = document.getElementById('loadingOverlay');
-            val ? loader.classList.remove('hidden') : loader.classList.add('hidden');
-        }
+        window.onload = fetchDataFromAPI;
     </script>
 </body>
 </html>
