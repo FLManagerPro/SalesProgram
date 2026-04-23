@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Training Tracker - Firebase Integration</title>
+    <title>Sales Training Tracker - HRTVerse Cloud</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,31 +13,41 @@
         .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.1); }
         .sidebar-active { background-color: rgba(255, 255, 255, 0.15); border-left: 4px solid #3b82f6; }
         canvas { max-width: 100% !important; height: auto !important; }
-        .loading-overlay { background: rgba(255,255,255,0.7); z-index: 100; }
+        .loading-overlay { background: rgba(255,255,255,0.7); z-index: 1000; }
+        .stats-card { transition: transform 0.2s; }
+        .stats-card:hover { transform: translateY(-2px); }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex">
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="fixed inset-0 loading-overlay flex items-center justify-center hidden">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div class="flex flex-col items-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-2"></div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Sinkronisasi Cloud...</p>
+        </div>
     </div>
 
     <!-- Sidebar -->
     <aside class="w-64 bg-[#1e293b] text-white flex flex-col hidden md:flex shrink-0">
         <div class="p-6 flex items-center space-x-3">
             <div class="bg-blue-500 p-2 rounded-lg">
-                <i class="fas fa-globe text-white text-xl"></i>
+                <i class="fas fa-chart-line text-white text-xl"></i>
             </div>
-            <h1 class="font-bold text-lg leading-tight uppercase tracking-wider">Sales Training<br>Tracker</h1>
+            <h1 class="font-bold text-lg leading-tight uppercase tracking-wider">SDP Training<br>Dashboard</h1>
         </div>
 
         <nav class="flex-1 mt-6">
             <a href="#" class="sidebar-active flex items-center px-6 py-3 text-white">
+                <i class="fas fa-th-large w-6 text-blue-400"></i>
+                <span class="text-sm font-semibold uppercase">Overview</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center px-6 py-3 text-gray-400 hover:text-white transition-all">
                 <i class="fas fa-users w-6"></i>
                 <span class="text-sm font-semibold uppercase">Trainees</span>
             </a>
-            <div class="px-6 py-2 text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-4">Status Cloud</div>
+            
+            <div class="px-6 py-2 text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-8">Sistem Status</div>
             <div id="authStatus" class="px-6 py-2 flex items-center text-xs text-yellow-500">
                 <i class="fas fa-circle-notch fa-spin mr-2"></i> Menghubungkan...
             </div>
@@ -55,27 +65,63 @@
     <main class="flex-1 flex flex-col overflow-hidden">
         <header class="bg-white h-16 flex items-center justify-between px-8 border-b border-gray-200 shrink-0">
             <div class="text-sm font-medium text-gray-500">
-                User ID: <span id="displayUserId" class="text-gray-800 font-mono">Anonim</span>
+                Node ID: <span id="displayUserId" class="text-gray-800 font-mono text-[10px]">Memuat...</span>
             </div>
-            <div class="flex items-center space-x-3 border-l pl-6">
-                <div class="text-right">
-                    <p class="text-xs text-gray-400">Admin:</p>
-                    <p class="text-sm font-semibold text-gray-700">Sarah J.</p>
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:block text-right">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Authorized Admin</p>
+                    <p class="text-sm font-bold text-gray-800">Coach Prast</p>
                 </div>
-                <img src="https://i.pravatar.cc/150?u=sarah" alt="Admin" class="w-10 h-10 rounded-full border-2 border-blue-100">
+                <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-md">
+                    CP
+                </div>
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-8 bg-gray-50">
+        <div class="flex-1 overflow-y-auto p-6 md:p-8 bg-gray-50">
+            
+            <!-- Real-time Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 stats-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Peserta</p>
+                            <h3 id="cardTotalTrainees" class="text-3xl font-black text-gray-800">0</h3>
+                        </div>
+                        <div class="bg-blue-50 p-3 rounded-xl text-blue-600"><i class="fas fa-users text-xl"></i></div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 stats-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Lulus (Graduated)</p>
+                            <h3 id="cardGraduated" class="text-3xl font-black text-gray-800">0</h3>
+                        </div>
+                        <div class="bg-green-50 p-3 rounded-xl text-green-600"><i class="fas fa-check-circle text-xl"></i></div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500 stats-card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Sedang Proses</p>
+                            <h3 id="cardInProgress" class="text-3xl font-black text-gray-800">0</h3>
+                        </div>
+                        <div class="bg-orange-50 p-3 rounded-xl text-orange-600"><i class="fas fa-clock text-xl"></i></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex flex-col lg:flex-row gap-8">
-                
                 <!-- Table Section -->
                 <div class="lg:w-3/4">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                         <div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <h2 class="text-xl font-bold text-gray-800 uppercase">Manajemen Data Trainee</h2>
-                            <button onclick="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center shadow-lg shadow-blue-200">
-                                <i class="fas fa-plus mr-2"></i> Tambah Trainee
+                            <div>
+                                <h2 class="text-xl font-black text-gray-800 uppercase tracking-tight">Data Manajemen Trainee</h2>
+                                <p class="text-xs text-gray-500">Pantau progres Sales Development Program secara real-time</p>
+                            </div>
+                            <button onclick="openModal()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition flex items-center shadow-lg shadow-blue-200 text-sm">
+                                <i class="fas fa-plus-circle mr-2"></i> Tambah Trainee
                             </button>
                         </div>
 
@@ -85,11 +131,11 @@
                                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                                     <i class="fas fa-search"></i>
                                 </span>
-                                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari Nama, Supervisor, atau Wilayah..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition text-sm">
+                                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari Nama, Supervisor, atau Wilayah..." class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-sm">
                             </div>
                             
-                            <button onclick="exportToCSV()" class="flex items-center bg-green-600 text-white border border-transparent px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">
-                                <i class="fas fa-file-excel mr-2"></i> Export ke Sheets
+                            <button onclick="exportToCSV()" class="flex items-center bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 transition">
+                                <i class="fas fa-download mr-2"></i> Export CSV
                             </button>
                         </div>
 
@@ -97,19 +143,18 @@
                         <div class="overflow-x-auto">
                             <table class="w-full text-left" id="traineeTable">
                                 <thead>
-                                    <tr class="bg-blue-600 text-white text-xs uppercase tracking-wider">
-                                        <th class="px-6 py-4 font-semibold">Nama Trainee</th>
-                                        <th class="px-6 py-4 font-semibold">Supervisor</th>
-                                        <th class="px-6 py-4 font-semibold">Wilayah</th>
-                                        <th class="px-6 py-4 font-semibold">Telepon</th>
-                                        <th class="px-6 py-4 font-semibold text-center">Status</th>
-                                        <th class="px-6 py-4 font-semibold text-center">Aksi</th>
+                                    <tr class="bg-gray-50 text-gray-400 text-[10px] uppercase font-black tracking-[0.1em]">
+                                        <th class="px-6 py-4">Informasi Trainee</th>
+                                        <th class="px-6 py-4">Supervisor</th>
+                                        <th class="px-6 py-4">Wilayah</th>
+                                        <th class="px-6 py-4 text-center">Status</th>
+                                        <th class="px-6 py-4 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100" id="tableBody">
                                     <tr>
-                                        <td colspan="6" class="px-6 py-10 text-center text-gray-400 italic">
-                                            <i class="fas fa-spinner fa-spin mr-2"></i> Memuat data dari Firestore...
+                                        <td colspan="5" class="px-6 py-10 text-center text-gray-400 italic">
+                                            <i class="fas fa-circle-notch fa-spin mr-2"></i> Mengambil data dari cloud...
                                         </td>
                                     </tr>
                                 </tbody>
@@ -120,23 +165,22 @@
 
                 <!-- Widgets Section -->
                 <div class="lg:w-1/4 space-y-6">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 uppercase tracking-tight text-xs">Statistik Kelulusan</h3>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                        <h3 class="font-black text-gray-800 mb-6 border-b pb-2 uppercase tracking-tight text-xs">Visual Progres</h3>
                         <div class="relative h-48">
                             <canvas id="passingChart"></canvas>
                         </div>
                     </div>
 
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 uppercase tracking-tight text-xs">Ringkasan Cepat</h3>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                        <h3 class="font-black text-gray-800 mb-4 border-b pb-2 uppercase tracking-tight text-xs">KPI Summary</h3>
                         <div class="space-y-4">
                             <div class="flex justify-between items-center">
-                                <span class="text-gray-500 text-sm">Total Trainees</span>
-                                <span id="summaryTotal" class="text-lg font-bold text-blue-600">0</span>
+                                <span class="text-gray-500 text-sm font-medium">Retention Rate</span>
+                                <span id="summaryRate" class="text-lg font-black text-emerald-600">0%</span>
                             </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-500 text-sm">Tingkat Keberhasilan</span>
-                                <span id="summaryRate" class="text-lg font-bold text-green-600">0%</span>
+                            <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                                <div id="summaryProgress" class="bg-emerald-500 h-full" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
@@ -146,51 +190,55 @@
     </main>
 
     <!-- Modal Form -->
-    <div id="traineeModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
-            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
-                <h3 id="modalTitle" class="text-white font-bold">Input Data Trainee</h3>
-                <button onclick="closeModal()" class="text-white hover:text-gray-200 text-xl">&times;</button>
+    <div id="traineeModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-gray-100">
+            <div class="bg-blue-600 px-6 py-5 flex justify-between items-center">
+                <div>
+                    <h3 id="modalTitle" class="text-white font-black uppercase tracking-tight">Input Data Trainee</h3>
+                    <p class="text-[10px] text-blue-100 font-bold uppercase tracking-widest">Formulir Pendaftaran Cloud</p>
+                </div>
+                <button onclick="closeModal()" class="text-white hover:bg-white/20 w-8 h-8 rounded-full transition">&times;</button>
             </div>
             <form id="traineeForm" class="p-6 space-y-4">
                 <input type="hidden" id="editDocId">
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Lengkap</label>
-                    <input type="text" id="formName" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Nama Lengkap</label>
+                    <input type="text" id="formName" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Supervisor</label>
-                        <input type="text" id="formSup" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Supervisor</label>
+                        <input type="text" id="formSup" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Wilayah</label>
-                        <input type="text" id="formRegion" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Wilayah</label>
+                        <input type="text" id="formRegion" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nomor Telepon</label>
-                    <input type="text" id="formPhone" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Nomor Telepon (WhatsApp)</label>
+                    <input type="text" id="formPhone" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Status Pelatihan</label>
-                    <select id="formStatus" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                        <option value="Completed">Selesai</option>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 tracking-widest">Status Pelatihan</label>
+                    <select id="formStatus" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition font-bold text-gray-700">
+                        <option value="Completed">Lulus / Selesai</option>
                         <option value="In Progress">Dalam Proses</option>
-                        <option value="Failed">Gagal</option>
+                        <option value="Failed">Gagal / Drop Out</option>
                     </select>
                 </div>
                 <div class="pt-4 flex space-x-3">
-                    <button type="button" onclick="closeModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">Batal</button>
-                    <button type="submit" id="submitBtn" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-lg">Simpan Data</button>
+                    <button type="button" onclick="closeModal()" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-gray-500 font-bold hover:bg-gray-50 transition text-sm uppercase">Batal</button>
+                    <button type="submit" id="submitBtn" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-xl shadow-blue-200 transition text-sm uppercase tracking-widest">Simpan Data</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 z-[200] hidden transform transition-all duration-300 translate-y-10 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center">
-        <span id="toastMsg"></span>
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-8 right-8 z-[200] hidden transform transition-all duration-300 translate-y-20 bg-gray-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center border border-gray-700">
+        <div class="w-2 h-2 bg-blue-500 rounded-full mr-3 animate-pulse"></div>
+        <span id="toastMsg" class="text-sm font-bold uppercase tracking-tight"></span>
     </div>
 
     <!-- Firebase SDKs -->
@@ -199,12 +247,12 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Konfigurasi Firebase (Diisi otomatis oleh sistem)
+        // Global Variable Handling
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-sales-app';
         
         let trainees = [];
         let myChart;
@@ -215,29 +263,17 @@
             if (el) el.innerHTML = `<i class="fas fa-circle ${colorClass} mr-2"></i> ${text}`;
         };
 
-        // --- AUTENTIKASI ---
-        const initAuth = async (retryCount = 0) => {
+        // --- AUTH LOGIC ---
+        const initAuth = async () => {
             try {
-                // Mencoba Login
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
             } catch (err) {
-                console.error("FIREBASE AUTH ERROR:", err.code, err.message);
-                
-                if (err.code === 'auth/operation-not-allowed') {
-                    updateStatus('Aktifkan Anon Auth!', 'text-red-500');
-                } else if (err.code === 'auth/unauthorized-domain') {
-                    updateStatus('Domain Belum Terdaftar', 'text-red-500');
-                } else {
-                    updateStatus('Gagal: ' + err.code, 'text-red-500');
-                }
-
-                if (retryCount < 3) {
-                    setTimeout(() => initAuth(retryCount + 1), 2000);
-                }
+                console.error("AUTH ERROR:", err);
+                updateStatus('Cloud Error', 'text-red-500');
             }
         };
 
@@ -246,38 +282,33 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
-                updateStatus('Cloud Aktif', 'text-green-500');
+                updateStatus('Cloud Aktif', 'text-emerald-500');
                 document.getElementById('displayUserId').innerText = user.uid;
                 loadData();
             } else {
-                updateStatus('Mencoba Login...', 'text-yellow-500');
+                updateStatus('Menghubungkan...', 'text-yellow-500');
             }
         });
 
-        // --- OPERASI DATA ---
+        // --- DATA LOGIC ---
         function loadData() {
             if (!currentUser) return;
-
-            // Koleksi: /artifacts/{appId}/public/data/trainees
             const traineesCol = collection(db, 'artifacts', appId, 'public', 'data', 'trainees');
             
-            // OnSnapshot untuk real-time data
             onSnapshot(traineesCol, (snapshot) => {
                 trainees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderTable(trainees);
-                updateChart();
-                updateSummary();
+                updateDashboardUI();
             }, (error) => {
                 console.error("FIRESTORE ERROR:", error);
-                updateStatus('Izin Ditolak', 'text-red-500');
-                showToast("Cek tab 'Rules' di Firebase Console!");
+                showToast("Izin Firestore Ditolak!");
             });
         }
 
-        // Simpan / Perbarui
+        // Simpan / Edit
         document.getElementById('traineeForm').onsubmit = async (e) => {
             e.preventDefault();
-            if (!currentUser) return showToast("Sesi cloud tidak aktif.");
+            if (!currentUser) return showToast("Tidak ada koneksi.");
             
             const docId = document.getElementById('editDocId').value;
             const data = {
@@ -293,66 +324,114 @@
             try {
                 if (docId) {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trainees', docId), data);
-                    showToast("Data diperbarui di cloud!");
+                    showToast("Update Berhasil");
                 } else {
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'trainees'), { 
                         ...data, 
-                        avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
                         createdAt: new Date().toISOString()
                     });
-                    showToast("Data tersimpan ke cloud!");
+                    showToast("Trainee Berhasil Ditambah");
                 }
                 closeModal();
             } catch (err) {
-                console.error("SAVE ERROR:", err);
-                showToast("Gagal menyimpan. Cek koneksi.");
+                showToast("Gagal menyimpan!");
             }
             setLoading(false);
         };
 
         // Hapus
         window.deleteTrainee = async (docId) => {
-            if (!confirm("Hapus data ini selamanya dari Cloud?")) return;
+            const confirmed = window.confirm("Hapus data ini secara permanen dari Cloud?");
+            if (!confirmed) return;
+            
             setLoading(true);
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trainees', docId));
-                showToast("Terhapus!");
+                showToast("Data Terhapus");
             } catch (err) {
-                showToast("Gagal menghapus.");
+                showToast("Gagal menghapus");
             }
             setLoading(false);
         };
 
-        // --- RENDER & CHART ---
+        // --- UI RENDERING ---
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-gray-400 italic">Database kosong. Tambah data untuk memulai.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-gray-400 italic">Belum ada data trainee di database cloud ini.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = data.map((item) => `
-                <tr class="hover:bg-blue-50 transition border-b border-gray-100">
-                    <td class="px-6 py-4 flex items-center space-x-3">
-                        <img src="${item.avatar || 'https://i.pravatar.cc/150'}" class="w-8 h-8 rounded-full shadow-sm">
-                        <span class="font-medium text-gray-800">${item.name}</span>
+                <tr class="hover:bg-blue-50/50 transition-all border-b border-gray-100 group">
+                    <td class="px-6 py-5">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-100 to-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs shadow-sm">
+                                ${item.name.charAt(0)}
+                            </div>
+                            <div>
+                                <p class="font-bold text-gray-800 text-sm leading-tight">${item.name}</p>
+                                <p class="text-[10px] text-gray-400 font-mono">${item.phone}</p>
+                            </div>
+                        </div>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-600">${item.supervisor}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">${item.region}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">${item.phone}</td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusColor(item.status)}">${item.status}</span>
+                    <td class="px-6 py-5 text-sm font-semibold text-gray-600">${item.supervisor}</td>
+                    <td class="px-6 py-5">
+                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md font-bold">${item.region}</span>
                     </td>
-                    <td class="px-6 py-4">
-                        <div class="flex justify-center space-x-3 text-gray-400">
-                            <button onclick="editTrainee('${item.id}')" class="hover:text-blue-600 transition"><i class="far fa-edit"></i></button>
-                            <button onclick="deleteTrainee('${item.id}')" class="hover:text-red-600 transition"><i class="far fa-trash-alt"></i></button>
+                    <td class="px-6 py-5 text-center">
+                        <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${getStatusStyle(item.status)}">${item.status}</span>
+                    </td>
+                    <td class="px-6 py-5">
+                        <div class="flex justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="editTrainee('${item.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center"><i class="far fa-edit text-xs"></i></button>
+                            <button onclick="deleteTrainee('${item.id}')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center"><i class="far fa-trash-alt text-xs"></i></button>
                         </div>
                     </td>
                 </tr>
             `).join('');
         }
 
+        function updateDashboardUI() {
+            const total = trainees.length;
+            const completed = trainees.filter(t => t.status === 'Completed').length;
+            const inProgress = trainees.filter(t => t.status === 'In Progress').length;
+            const failed = trainees.filter(t => t.status === 'Failed').length;
+
+            // Update Cards
+            document.getElementById('cardTotalTrainees').innerText = total;
+            document.getElementById('cardGraduated').innerText = completed;
+            document.getElementById('cardInProgress').innerText = inProgress;
+
+            // Update KPI
+            const rate = total > 0 ? Math.round((completed/total)*100) : 0;
+            document.getElementById('summaryRate').innerText = `${rate}%`;
+            document.getElementById('summaryProgress').style.width = `${rate}%`;
+
+            // Update Doughnut Chart
+            const ctx = document.getElementById('passingChart').getContext('2d');
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Graduated', 'Failed', 'Processing'],
+                    datasets: [{
+                        data: [completed, failed, inProgress],
+                        backgroundColor: ['#3b82f6', '#ef4444', '#f59e0b'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: { 
+                    cutout: '80%', 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } } 
+                }
+            });
+        }
+
+        // --- HELPERS ---
         window.editTrainee = (docId) => {
             const t = trainees.find(x => x.id === docId);
             if (!t) return;
@@ -362,44 +441,14 @@
             document.getElementById('formRegion').value = t.region;
             document.getElementById('formPhone').value = t.phone;
             document.getElementById('formStatus').value = t.status;
-            document.getElementById('modalTitle').innerText = "Edit Data Cloud";
+            document.getElementById('modalTitle').innerText = "Update Data Cloud";
             document.getElementById('traineeModal').classList.remove('hidden');
         };
-
-        function updateChart() {
-            const counts = {
-                'Completed': trainees.filter(t => t.status === 'Completed').length,
-                'Failed': trainees.filter(t => t.status === 'Failed').length,
-                'In Progress': trainees.filter(t => t.status === 'In Progress').length
-            };
-
-            const ctx = document.getElementById('passingChart').getContext('2d');
-            if (myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Selesai', 'Gagal', 'Proses'],
-                    datasets: [{
-                        data: [counts['Completed'], counts['Failed'], counts['In Progress']],
-                        backgroundColor: ['#3b82f6', '#fb923c', '#d1d5db'],
-                        borderWidth: 0,
-                    }]
-                },
-                options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
-        }
-
-        function updateSummary() {
-            const total = trainees.length;
-            const completed = trainees.filter(t => t.status === 'Completed').length;
-            document.getElementById('summaryTotal').innerText = total;
-            document.getElementById('summaryRate').innerText = total > 0 ? `${Math.round((completed/total)*100)}%` : '0%';
-        }
 
         window.openModal = () => {
             document.getElementById('traineeForm').reset();
             document.getElementById('editDocId').value = "";
-            document.getElementById('modalTitle').innerText = "Input Data Baru";
+            document.getElementById('modalTitle').innerText = "Tambah Trainee Baru";
             document.getElementById('traineeModal').classList.remove('hidden');
         };
 
@@ -416,31 +465,30 @@
         };
 
         window.exportToCSV = () => {
-            if (trainees.length === 0) return showToast("Tidak ada data cloud.");
+            if (trainees.length === 0) return showToast("Database kosong");
             const headers = ["Nama", "Supervisor", "Wilayah", "Telepon", "Status"];
             const rows = trainees.map(t => [`"${t.name}"`, `"${t.supervisor}"`, `"${t.region}"`, `"${t.phone}"`, `"${t.status}"`]);
-            let csvContent = "\uFEFF" + headers.join(",") + "\r\n" + rows.map(e => e.join(",")).join("\r\n");
+            const csvContent = "\uFEFF" + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.href = url;
-            link.download = `Cloud_Export.csv`;
+            link.href = URL.createObjectURL(blob);
+            link.download = `SDP_Report_${new Date().toLocaleDateString()}.csv`;
             link.click();
-            showToast("CSV Berhasil diunduh.");
+            showToast("CSV Diunduh");
         };
 
-        function getStatusColor(s) {
-            if (s === 'Completed') return "bg-green-100 text-green-700";
+        function getStatusStyle(s) {
+            if (s === 'Completed') return "bg-emerald-100 text-emerald-700";
             if (s === 'Failed') return "bg-red-100 text-red-700";
-            return "bg-orange-100 text-orange-700";
+            return "bg-amber-100 text-amber-700";
         }
 
         function showToast(msg) {
             const t = document.getElementById('toast');
             document.getElementById('toastMsg').innerText = msg;
-            t.classList.remove('hidden', 'translate-y-10');
+            t.classList.remove('hidden', 'translate-y-20');
             setTimeout(() => {
-                t.classList.add('translate-y-10');
+                t.classList.add('translate-y-20');
                 setTimeout(() => t.classList.add('hidden'), 300);
             }, 3000);
         }
