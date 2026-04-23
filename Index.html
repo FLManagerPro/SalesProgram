@@ -210,6 +210,11 @@
         let myChart;
         let currentUser = null;
 
+        const updateStatus = (text, colorClass) => {
+            const el = document.getElementById('authStatus');
+            el.innerHTML = `<i class="fas fa-circle ${colorClass} mr-2"></i> ${text}`;
+        };
+
         // --- AUTHENTICATION ---
         const initAuth = async () => {
             try {
@@ -220,7 +225,8 @@
                 }
             } catch (err) {
                 console.error("Auth Error:", err);
-                showToast("Gagal terhubung ke server cloud.");
+                updateStatus('Auth Error: ' + err.code, 'text-red-500');
+                showToast("Gagal autentikasi ke cloud.");
             }
         };
 
@@ -229,9 +235,11 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
-                document.getElementById('authStatus').innerHTML = '<i class="fas fa-circle text-green-500 mr-2"></i> Cloud Connected';
+                updateStatus('Cloud Connected', 'text-green-500');
                 document.getElementById('displayUserId').innerText = user.uid;
                 loadData();
+            } else {
+                updateStatus('Not Logged In', 'text-red-500');
             }
         });
 
@@ -239,6 +247,7 @@
         function loadData() {
             if (!currentUser) return;
 
+            // Pastikan path mengikuti aturan /artifacts/{appId}/public/data/{collectionName}
             const traineesCol = collection(db, 'artifacts', appId, 'public', 'data', 'trainees');
             
             // Listen to real-time changes
@@ -248,15 +257,23 @@
                 updateChart();
                 updateSummary();
             }, (error) => {
-                console.error("Listen error:", error);
-                showToast("Izin ditolak atau database belum siap.");
+                console.error("Firestore Error:", error);
+                // Jika error di sini, biasanya masalah Permission Rules
+                updateStatus('DB Error: Permission Denied', 'text-red-500');
+                showToast("Error memuat data: " + error.message);
+                
+                // Fallback UI jika data kosong atau error
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-red-400">Gagal mengakses database. Cek permission.</td></tr>`;
             });
         }
 
         // Simpan / Update Data
         document.getElementById('traineeForm').onsubmit = async (e) => {
             e.preventDefault();
-            if (!currentUser) return;
+            if (!currentUser) {
+                showToast("Anda belum terautentikasi!");
+                return;
+            }
             
             const docId = document.getElementById('editDocId').value;
             const data = {
@@ -273,28 +290,32 @@
                 const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'trainees');
                 if (docId) {
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trainees', docId), data);
-                    showToast("Data diperbarui di cloud!");
+                    showToast("Data diperbarui!");
                 } else {
-                    await addDoc(colRef, { ...data, avatar: `https://i.pravatar.cc/150?u=${Math.random()}` });
-                    showToast("Data baru tersimpan di cloud!");
+                    await addDoc(colRef, { 
+                        ...data, 
+                        avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
+                        createdAt: new Date().toISOString()
+                    });
+                    showToast("Data baru tersimpan!");
                 }
                 closeModal();
             } catch (err) {
-                console.error(err);
-                showToast("Gagal menyimpan data.");
+                console.error("Save Error:", err);
+                showToast("Gagal simpan: " + err.message);
             }
             setLoading(false);
         };
 
         // Hapus Data
         window.deleteTrainee = async (docId) => {
-            if (!confirm("Hapus data ini secara permanen dari cloud?")) return;
+            if (!confirm("Hapus data ini?")) return;
             setLoading(true);
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trainees', docId));
                 showToast("Data dihapus!");
             } catch (err) {
-                showToast("Gagal menghapus data.");
+                showToast("Gagal hapus data.");
             }
             setLoading(false);
         };
@@ -303,11 +324,11 @@
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-gray-400">Belum ada data di Firestore.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-gray-400">Belum ada data. Silakan tambah data baru.</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = data.map((item, index) => `
+            tbody.innerHTML = data.map((item) => `
                 <tr class="hover:bg-blue-50 transition border-b border-gray-100">
                     <td class="px-6 py-4 flex items-center space-x-3">
                         <img src="${item.avatar || 'https://i.pravatar.cc/150'}" class="w-8 h-8 rounded-full shadow-sm">
@@ -338,7 +359,7 @@
             document.getElementById('formRegion').value = t.region;
             document.getElementById('formPhone').value = t.phone;
             document.getElementById('formStatus').value = t.status;
-            document.getElementById('modalTitle').innerText = "Edit Data Cloud";
+            document.getElementById('modalTitle').innerText = "Edit Data";
             document.getElementById('traineeModal').classList.remove('hidden');
         };
 
@@ -396,21 +417,31 @@
         window.exportToCSV = () => {
             if (trainees.length === 0) return showToast("Tidak ada data untuk di-export.");
             
+            // Bersihkan data dari karakter koma yang bisa merusak format CSV
             const headers = ["Nama", "Supervisor", "Wilayah", "Telepon", "Status"];
-            const rows = trainees.map(t => [t.name, t.supervisor, t.region, t.phone, t.status]);
+            const rows = trainees.map(t => [
+                `"${t.name.replace(/"/g, '""')}"`, 
+                `"${t.supervisor.replace(/"/g, '""')}"`, 
+                `"${t.region.replace(/"/g, '""')}"`, 
+                `"${t.phone}"`, 
+                `"${t.status}"`
+            ]);
             
-            let csvContent = "data:text/csv;charset=utf-8," 
-                + headers.join(",") + "\n"
-                + rows.map(e => e.join(",")).join("\n");
+            let csvContent = "\uFEFF"; // Byte Order Mark untuk Excel agar support UTF-8
+            csvContent += headers.join(",") + "\r\n";
+            rows.forEach(row => {
+                csvContent += row.join(",") + "\r\n";
+            });
 
-            const encodedUri = encodeURI(csvContent);
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Sales_Training_Data_${new Date().toLocaleDateString()}.csv`);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Sales_Trainees_${new Date().toISOString().split('T')[0]}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            showToast("File CSV siap dibuka di Google Sheets!");
+            showToast("CSV berhasil diunduh.");
         };
 
         function getStatusColor(s) {
